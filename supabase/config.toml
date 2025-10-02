@@ -1,1 +1,13 @@
 project_id = "nxusmyuatomokdjzlclg"
+
+[functions.generate-narrative]
+verify_jwt = false
+
+[functions.analyze-narrative]
+verify_jwt = false
+
+[functions.suggest-projects]
+verify_jwt = false
+
+[functions.batch-process]
+verify_jwt = false

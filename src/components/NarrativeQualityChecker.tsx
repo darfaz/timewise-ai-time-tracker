@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Star, Lightbulb } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QualityAnalysis {
   score: number;
@@ -28,33 +29,42 @@ export const NarrativeQualityChecker = ({
         const result = await onAnalyze(narrative);
         setAnalysis(result);
       } else {
-        // Default analysis logic
-        const issues: string[] = [];
-        const suggestions: string[] = [];
-        let score = 100;
+        try {
+          const { data, error } = await supabase.functions.invoke('analyze-narrative', {
+            body: { narrative }
+          });
 
-        const vagueTerms = ["worked on", "various tasks", "stuff", "things", "did some"];
-        vagueTerms.forEach((term) => {
-          if (narrative.toLowerCase().includes(term)) {
-            issues.push(`Vague term: "${term}"`);
-            suggestions.push(`Replace "${term}" with specific actions or outcomes`);
-            score -= 15;
+          if (error) throw error;
+          setAnalysis(data);
+        } catch (error) {
+          // Fallback to local analysis
+          const issues: string[] = [];
+          const suggestions: string[] = [];
+          let score = 100;
+
+          const vagueTerms = ["worked on", "various tasks", "stuff", "things", "did some"];
+          vagueTerms.forEach((term) => {
+            if (narrative.toLowerCase().includes(term)) {
+              issues.push(`Vague term: "${term}"`);
+              suggestions.push(`Replace "${term}" with specific actions or outcomes`);
+              score -= 15;
+            }
+          });
+
+          if (narrative.length < 50) {
+            issues.push("Narrative is too short");
+            suggestions.push("Add more detail about what was accomplished");
+            score -= 20;
           }
-        });
 
-        if (narrative.length < 50) {
-          issues.push("Narrative is too short");
-          suggestions.push("Add more detail about what was accomplished");
-          score -= 20;
+          if (!narrative.match(/\b(developed|created|implemented|fixed|optimized|designed|reviewed)\b/i)) {
+            issues.push("Missing action verbs");
+            suggestions.push("Use strong action verbs like developed, implemented, optimized");
+            score -= 10;
+          }
+
+          setAnalysis({ score: Math.max(0, score), issues, suggestions });
         }
-
-        if (!narrative.match(/\b(developed|created|implemented|fixed|optimized|designed|reviewed)\b/i)) {
-          issues.push("Missing action verbs");
-          suggestions.push("Use strong action verbs like developed, implemented, optimized");
-          score -= 10;
-        }
-
-        setAnalysis({ score: Math.max(0, score), issues, suggestions });
       }
     };
 

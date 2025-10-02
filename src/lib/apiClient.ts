@@ -1,4 +1,5 @@
 import { mockActivities, mockProjects, mockTimeEntries } from "./mockData";
+import { supabase } from "@/integrations/supabase/client";
 
 let apiBaseUrl = "http://localhost:3000/api";
 
@@ -27,46 +28,41 @@ export const apiClient = {
   },
 
   async generateNarrative(activityId: string) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const narratives = [
-      "Developed responsive UI components using React and Tailwind CSS, focusing on mobile-first design principles and accessibility standards.",
-      "Collaborated with design team on user interface improvements, implemented feedback from user testing sessions.",
-      "Debugged production issues related to API integration, optimized database queries for better performance.",
-      "Created comprehensive documentation for new features, including setup guides and best practices.",
-      "Reviewed pull requests and provided constructive feedback to team members on code quality and architecture.",
-    ];
-    return narratives[Math.floor(Math.random() * narratives.length)];
+    const activity = mockActivities.find(a => a.id === activityId);
+    
+    const { data, error } = await supabase.functions.invoke('generate-narrative', {
+      body: {
+        activityName: activity?.appName || 'Unknown',
+        duration: activity?.duration || '0m',
+        timestamp: activity?.timestamp || new Date().toISOString()
+      }
+    });
+
+    if (error) throw error;
+    return data.narrative;
   },
 
   async getSmartSuggestions() {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return [
-      {
-        activityId: "1",
-        suggestedProject: "TimeWise App",
-        confidence: 92,
-        activityName: "Visual Studio Code - Dashboard.tsx",
-      },
-      {
-        activityId: "2",
-        suggestedProject: "Client Portal",
-        confidence: 78,
-        activityName: "Chrome - API Documentation",
-      },
-      {
-        activityId: "3",
-        suggestedProject: "Marketing Site",
-        confidence: 85,
-        activityName: "Figma - Landing Page Designs",
-      },
-    ];
+    const untaggedActivities = mockActivities.filter(a => !a.projectId).slice(0, 5);
+    
+    const { data, error } = await supabase.functions.invoke('suggest-projects', {
+      body: {
+        activities: untaggedActivities,
+        projects: mockProjects
+      }
+    });
+
+    if (error) throw error;
+    return data.suggestions || [];
   },
 
-  async batchProcessNarratives(entryIds: string[]) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const processed = entryIds.length;
-    const failed = Math.floor(Math.random() * 2); // Simulate occasional failures
-    return { processed: processed - failed, failed };
+  async batchProcessNarratives(entries: any[]) {
+    const { data, error } = await supabase.functions.invoke('batch-process', {
+      body: { entries }
+    });
+
+    if (error) throw error;
+    return data;
   },
 
   async createTimeEntry(entry: any) {
