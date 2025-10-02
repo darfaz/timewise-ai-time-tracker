@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Timeline from "./pages/Timeline";
 import Timesheet from "./pages/Timesheet";
 import Projects from "./pages/Projects";
+import Categories from "./pages/Categories";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/timesheet" element={<Timesheet />} />
               <Route path="/projects" element={<Projects />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

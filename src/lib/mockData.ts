@@ -154,3 +154,76 @@ export const mockWeeklyData = [
   { day: "Sat", hours: 3.5, billable: 2.5, nonBillable: 1.0 },
   { day: "Sun", hours: 1.2, billable: 0.0, nonBillable: 1.2 },
 ];
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  keywords: string[];
+  totalTimeThisWeek: number; // in hours
+  entryCount: number;
+}
+
+export const mockCategories: Category[] = [
+  {
+    id: "1",
+    name: "Work",
+    color: "hsl(217, 91%, 60%)",
+    icon: "Briefcase",
+    keywords: ["vscode", "code", "github", "terminal", "figma", "slack"],
+    totalTimeThisWeek: 32.5,
+    entryCount: 87,
+  },
+  {
+    id: "2",
+    name: "Learning",
+    color: "hsl(271, 91%, 65%)",
+    icon: "BookOpen",
+    keywords: ["documentation", "tutorial", "course", "udemy", "youtube"],
+    totalTimeThisWeek: 8.2,
+    entryCount: 23,
+  },
+  {
+    id: "3",
+    name: "Personal",
+    color: "hsl(160, 84%, 39%)",
+    icon: "User",
+    keywords: ["personal", "email", "calendar", "notes"],
+    totalTimeThisWeek: 4.7,
+    entryCount: 15,
+  },
+  {
+    id: "4",
+    name: "Break",
+    color: "hsl(220, 9%, 46%)",
+    icon: "Coffee",
+    keywords: ["break", "lunch", "rest", "away"],
+    totalTimeThisWeek: 5.5,
+    entryCount: 34,
+  },
+  {
+    id: "5",
+    name: "Focus Time",
+    color: "hsl(38, 92%, 50%)",
+    icon: "Target",
+    keywords: ["deep work", "focus", "concentrated"],
+    totalTimeThisWeek: 12.3,
+    entryCount: 18,
+  },
+];
+
+export const colorPalette = [
+  { name: "Blue", value: "hsl(217, 91%, 60%)" },
+  { name: "Purple", value: "hsl(271, 91%, 65%)" },
+  { name: "Green", value: "hsl(160, 84%, 39%)" },
+  { name: "Orange", value: "hsl(38, 92%, 50%)" },
+  { name: "Red", value: "hsl(0, 84%, 60%)" },
+  { name: "Pink", value: "hsl(340, 82%, 52%)" },
+  { name: "Teal", value: "hsl(180, 84%, 39%)" },
+  { name: "Indigo", value: "hsl(239, 84%, 67%)" },
+  { name: "Yellow", value: "hsl(48, 96%, 53%)" },
+  { name: "Cyan", value: "hsl(199, 89%, 48%)" },
+  { name: "Gray", value: "hsl(220, 9%, 46%)" },
+  { name: "Lime", value: "hsl(84, 81%, 44%)" },
+];
