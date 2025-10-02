@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
+import { ConfigProvider } from "@/contexts/ConfigContext";
 import Dashboard from "./pages/Dashboard";
 import Timeline from "./pages/Timeline";
 import Timesheet from "./pages/Timesheet";
@@ -15,22 +16,24 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/timeline" element={<Timeline />} />
-            <Route path="/timesheet" element={<Timesheet />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ConfigProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/timeline" element={<Timeline />} />
+              <Route path="/timesheet" element={<Timesheet />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ConfigProvider>
   </QueryClientProvider>
 );
 

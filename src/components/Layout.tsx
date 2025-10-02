@@ -1,9 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Clock, LayoutDashboard, List, FileText, FolderKanban, Settings } from "lucide-react";
+import { Clock, LayoutDashboard, List, FileText, FolderKanban, Settings, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useConfig } from "@/contexts/ConfigContext";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const { LEGAL_MODE, PRODUCT_NAME } = useConfig();
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -24,9 +27,21 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex items-center gap-8">
               <Link to="/" className="flex items-center gap-2">
                 <div className="rounded-lg bg-gradient-primary p-2">
-                  <List className="h-5 w-5 text-primary-foreground" />
+                  {LEGAL_MODE ? (
+                    <Briefcase className="h-5 w-5 text-primary-foreground" />
+                  ) : (
+                    <List className="h-5 w-5 text-primary-foreground" />
+                  )}
                 </div>
-                <span className="text-xl font-bold text-foreground">TimeWise</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-foreground">{PRODUCT_NAME}</span>
+                  <Badge 
+                    variant={LEGAL_MODE ? "default" : "secondary"} 
+                    className={LEGAL_MODE ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
+                  >
+                    {LEGAL_MODE ? "Legal" : "Standard"}
+                  </Badge>
+                </div>
               </Link>
 
               <div className="hidden md:flex md:gap-1">
