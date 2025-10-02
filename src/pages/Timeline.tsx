@@ -1,67 +1,61 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ActivityItem } from "@/components/ActivityItem";
-import { useActivities } from "@/hooks/useActivities";
-import { useProjects } from "@/hooks/useProjects";
-import { useAI } from "@/hooks/useAI";
-import { Sparkles, Filter } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { EnhancedActivityItem } from "@/components/EnhancedActivityItem";
+import { TimelineStats } from "@/components/TimelineStats";
+import { TimelineFilters } from "@/components/TimelineFilters";
+import { EmptyTimeline } from "@/components/EmptyTimeline";
+import { mockActivities, mockProjects } from "@/lib/mockData";
 
 const Timeline = () => {
-  const { data: activities = [] } = useActivities();
-  const { data: projects = [] } = useProjects();
-  const { mutate: generateNarrative, isPending } = useAI();
-  const { toast } = useToast();
-  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState("today");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [appFilter, setAppFilter] = useState("all");
 
-  const handleGenerateDescription = (activityId: string) => {
-    setSelectedActivityId(activityId);
-    generateNarrative(activityId, {
-      onSuccess: (data) => {
-        toast({
-          title: "AI Description Generated",
-          description: data,
-        });
-        setSelectedActivityId(null);
-      },
-    });
-  };
+  // Using mock data for development
+  const activities = mockActivities;
+  const projects = mockProjects;
+
+  // Sort activities by timestamp (most recent first)
+  const sortedActivities = [...activities].sort(
+    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Timeline</h1>
-          <p className="mt-1 text-muted-foreground">Track all your activities chronologically</p>
-        </div>
-        <Button variant="outline">
-          <Filter className="mr-2 h-4 w-4" />
-          Filter
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Activity Timeline</h1>
+        <p className="mt-1 text-muted-foreground">
+          Your time tracking timeline for today
+        </p>
       </div>
 
-      <div className="space-y-4">
-        {activities.map((activity) => {
-          const project = projects.find((p) => p.id === activity.projectId);
-          return (
-            <div key={activity.id} className="space-y-2">
-              <ActivityItem activity={activity} project={project} />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleGenerateDescription(activity.id)}
-                disabled={isPending && selectedActivityId === activity.id}
-                className="ml-14"
-              >
-                <Sparkles className="mr-2 h-3 w-3" />
-                {isPending && selectedActivityId === activity.id
-                  ? "Generating..."
-                  : "Generate AI Description"}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
+      <TimelineStats activities={activities} projects={projects} />
+
+      <TimelineFilters
+        onDateFilter={setDateFilter}
+        onCategoryFilter={setCategoryFilter}
+        onAppFilter={setAppFilter}
+      />
+
+      {sortedActivities.length === 0 ? (
+        <EmptyTimeline />
+      ) : (
+        <ScrollArea className="h-[calc(100vh-28rem)]">
+          <div className="pr-4">
+            {sortedActivities.map((activity, index) => {
+              const project = projects.find((p) => p.id === activity.projectId);
+              return (
+                <EnhancedActivityItem
+                  key={activity.id}
+                  activity={activity}
+                  project={project}
+                  showTimeline={index < sortedActivities.length - 1}
+                />
+              );
+            })}
+          </div>
+        </ScrollArea>
+      )}
     </div>
   );
 };
