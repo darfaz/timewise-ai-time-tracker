@@ -146,11 +146,11 @@ export const mockTimeEntries: TimeEntry[] = [
 ];
 
 export const mockWeeklyData = [
-  { day: "Mon", hours: 7.5 },
-  { day: "Tue", hours: 8.2 },
-  { day: "Wed", hours: 6.8 },
-  { day: "Thu", hours: 8.5 },
-  { day: "Fri", hours: 7.0 },
-  { day: "Sat", hours: 3.5 },
-  { day: "Sun", hours: 1.2 },
+  { day: "Mon", hours: 7.5, billable: 6.0, nonBillable: 1.5 },
+  { day: "Tue", hours: 8.2, billable: 7.5, nonBillable: 0.7 },
+  { day: "Wed", hours: 6.8, billable: 5.5, nonBillable: 1.3 },
+  { day: "Thu", hours: 8.5, billable: 7.8, nonBillable: 0.7 },
+  { day: "Fri", hours: 7.0, billable: 6.2, nonBillable: 0.8 },
+  { day: "Sat", hours: 3.5, billable: 2.5, nonBillable: 1.0 },
+  { day: "Sun", hours: 1.2, billable: 0.0, nonBillable: 1.2 },
 ];
