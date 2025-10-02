@@ -227,3 +227,220 @@ export const colorPalette = [
   { name: "Gray", value: "hsl(220, 9%, 46%)" },
   { name: "Lime", value: "hsl(84, 81%, 44%)" },
 ];
+
+// Legal billing types and interfaces
+export interface Client {
+  id: string;
+  name: string;
+  clientId: string; // Firm's internal client ID
+  industry: string;
+  billingContact: string;
+  email: string;
+  phone: string;
+  billingGuidelines?: string;
+  createdAt: Date;
+}
+
+export interface Matter {
+  id: string;
+  matterId: string; // Firm's internal matter ID
+  matterName: string;
+  clientId: string;
+  caseType: "Litigation" | "Transactional" | "Corporate" | "Real Estate" | "IP" | "Employment" | "Other";
+  status: "Active" | "Closed" | "On Hold";
+  billingRules: string;
+  assignedAttorneys: string[];
+  notes: string;
+  totalTimeLogged: number; // in hours
+  lastActivityDate: Date;
+  createdAt: Date;
+}
+
+export const mockClients: Client[] = [
+  {
+    id: "1",
+    name: "TechCorp Industries",
+    clientId: "TC-2024-001",
+    industry: "Technology",
+    billingContact: "Sarah Johnson",
+    email: "sjohnson@techcorp.com",
+    phone: "(555) 123-4567",
+    billingGuidelines: "Standard ABA guidelines",
+    createdAt: new Date("2024-01-15"),
+  },
+  {
+    id: "2",
+    name: "Global Manufacturing LLC",
+    clientId: "GM-2024-002",
+    industry: "Manufacturing",
+    billingContact: "Michael Chen",
+    email: "mchen@globalmanuf.com",
+    phone: "(555) 234-5678",
+    billingGuidelines: "UTBMS codes required",
+    createdAt: new Date("2024-02-01"),
+  },
+  {
+    id: "3",
+    name: "Riverside Medical Center",
+    clientId: "RM-2024-003",
+    industry: "Healthcare",
+    billingContact: "Dr. Emily Rodriguez",
+    email: "erodriguez@riversidemedical.org",
+    phone: "(555) 345-6789",
+    createdAt: new Date("2024-02-20"),
+  },
+  {
+    id: "4",
+    name: "Apex Financial Services",
+    clientId: "AF-2024-004",
+    industry: "Finance",
+    billingContact: "David Park",
+    email: "dpark@apexfinancial.com",
+    phone: "(555) 456-7890",
+    billingGuidelines: "Detailed task descriptions required",
+    createdAt: new Date("2024-03-10"),
+  },
+];
+
+export const mockMatters: Matter[] = [
+  {
+    id: "1",
+    matterId: "2024-TC-001",
+    matterName: "Patent Infringement Defense",
+    clientId: "1",
+    caseType: "IP",
+    status: "Active",
+    billingRules: "ABA Model - Technology",
+    assignedAttorneys: ["John Smith", "Lisa Wong"],
+    notes: "High priority case with tight deadlines",
+    totalTimeLogged: 127.5,
+    lastActivityDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-01-20"),
+  },
+  {
+    id: "2",
+    matterId: "2024-TC-002",
+    matterName: "Software Licensing Agreement",
+    clientId: "1",
+    caseType: "Transactional",
+    status: "Active",
+    billingRules: "Standard hourly",
+    assignedAttorneys: ["Sarah Davis"],
+    notes: "Negotiation phase with third-party vendor",
+    totalTimeLogged: 45.2,
+    lastActivityDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-03-01"),
+  },
+  {
+    id: "3",
+    matterId: "2024-GM-001",
+    matterName: "Supply Chain Contract Dispute",
+    clientId: "2",
+    caseType: "Litigation",
+    status: "Active",
+    billingRules: "Carrier specific - UTBMS required",
+    assignedAttorneys: ["Robert Taylor", "Jennifer Lee"],
+    notes: "Discovery phase ongoing",
+    totalTimeLogged: 89.8,
+    lastActivityDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-02-05"),
+  },
+  {
+    id: "4",
+    matterId: "2024-GM-002",
+    matterName: "Corporate Restructuring",
+    clientId: "2",
+    caseType: "Corporate",
+    status: "On Hold",
+    billingRules: "Flat fee arrangement",
+    assignedAttorneys: ["Michael Brown"],
+    notes: "Awaiting board approval",
+    totalTimeLogged: 34.5,
+    lastActivityDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-03-15"),
+  },
+  {
+    id: "5",
+    matterId: "2024-RM-001",
+    matterName: "HIPAA Compliance Review",
+    clientId: "3",
+    caseType: "Corporate",
+    status: "Active",
+    billingRules: "Standard hourly",
+    assignedAttorneys: ["Patricia Martinez"],
+    notes: "Annual compliance audit",
+    totalTimeLogged: 23.7,
+    lastActivityDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-02-25"),
+  },
+  {
+    id: "6",
+    matterId: "2024-RM-002",
+    matterName: "Employment Discrimination Defense",
+    clientId: "3",
+    caseType: "Employment",
+    status: "Active",
+    billingRules: "ABA Model - Healthcare",
+    assignedAttorneys: ["James Wilson", "Linda Garcia"],
+    notes: "Mediation scheduled for next month",
+    totalTimeLogged: 67.3,
+    lastActivityDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-01-30"),
+  },
+  {
+    id: "7",
+    matterId: "2024-AF-001",
+    matterName: "Securities Fraud Investigation",
+    clientId: "4",
+    caseType: "Litigation",
+    status: "Active",
+    billingRules: "Carrier specific - detailed billing",
+    assignedAttorneys: ["Thomas Anderson", "Maria Rodriguez"],
+    notes: "SEC inquiry response due next week",
+    totalTimeLogged: 156.9,
+    lastActivityDate: new Date(),
+    createdAt: new Date("2024-02-10"),
+  },
+  {
+    id: "8",
+    matterId: "2024-AF-002",
+    matterName: "Merger Due Diligence",
+    clientId: "4",
+    caseType: "Corporate",
+    status: "Active",
+    billingRules: "Blended rate",
+    assignedAttorneys: ["Richard Kim", "Susan White"],
+    notes: "Target company document review in progress",
+    totalTimeLogged: 98.6,
+    lastActivityDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    createdAt: new Date("2024-03-05"),
+  },
+  {
+    id: "9",
+    matterId: "2023-TC-015",
+    matterName: "Trade Secret Litigation",
+    clientId: "1",
+    caseType: "Litigation",
+    status: "Closed",
+    billingRules: "Contingency + hourly",
+    assignedAttorneys: ["John Smith"],
+    notes: "Case settled favorably",
+    totalTimeLogged: 234.5,
+    lastActivityDate: new Date("2024-01-10"),
+    createdAt: new Date("2023-08-15"),
+  },
+  {
+    id: "10",
+    matterId: "2023-GM-008",
+    matterName: "Environmental Compliance Matter",
+    clientId: "2",
+    caseType: "Corporate",
+    status: "Closed",
+    billingRules: "Standard hourly",
+    assignedAttorneys: ["Jennifer Lee"],
+    notes: "EPA approval received",
+    totalTimeLogged: 78.2,
+    lastActivityDate: new Date("2024-02-15"),
+    createdAt: new Date("2023-11-01"),
+  },
+];
