@@ -8,12 +8,14 @@ interface EnhancedActivityItemProps {
   activity: Activity;
   project?: Project;
   showTimeline?: boolean;
+  onClick?: () => void;
 }
 
 export const EnhancedActivityItem = ({
   activity,
   project,
   showTimeline = true,
+  onClick,
 }: EnhancedActivityItemProps) => {
   const { LEGAL_MODE } = useConfig();
   const IconComponent = (LucideIcons as any)[activity.appIcon] || LucideIcons.Circle;
@@ -45,7 +47,10 @@ export const EnhancedActivityItem = ({
       )}
       
       <div className="flex-1 pb-6">
-        <div className="rounded-lg bg-card p-5 shadow-card hover:shadow-hover transition-all duration-200 border border-border">
+        <div 
+          className="rounded-lg bg-card p-5 shadow-card hover:shadow-hover transition-all duration-200 border border-border cursor-pointer"
+          onClick={onClick}
+        >
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
