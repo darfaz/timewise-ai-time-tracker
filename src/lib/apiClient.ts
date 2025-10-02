@@ -38,6 +38,37 @@ export const apiClient = {
     return narratives[Math.floor(Math.random() * narratives.length)];
   },
 
+  async getSmartSuggestions() {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return [
+      {
+        activityId: "1",
+        suggestedProject: "TimeWise App",
+        confidence: 92,
+        activityName: "Visual Studio Code - Dashboard.tsx",
+      },
+      {
+        activityId: "2",
+        suggestedProject: "Client Portal",
+        confidence: 78,
+        activityName: "Chrome - API Documentation",
+      },
+      {
+        activityId: "3",
+        suggestedProject: "Marketing Site",
+        confidence: 85,
+        activityName: "Figma - Landing Page Designs",
+      },
+    ];
+  },
+
+  async batchProcessNarratives(entryIds: string[]) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const processed = entryIds.length;
+    const failed = Math.floor(Math.random() * 2); // Simulate occasional failures
+    return { processed: processed - failed, failed };
+  },
+
   async createTimeEntry(entry: any) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return { id: Date.now().toString(), ...entry };
