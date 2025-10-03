@@ -22,7 +22,7 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
   const [apiUrl, setApiUrl] = useState("http://localhost:3000/api");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
-  const { setLegalMode, setApiBaseUrl } = useConfig();
+  const { setLegalMode, setApiBaseUrl, uiConfig } = useConfig();
   const { toast } = useToast();
 
   const totalSteps = 6;
@@ -119,9 +119,9 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
                   </div>
                   <h1 className="text-4xl font-bold text-foreground">Welcome!</h1>
                   <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    Let's get you set up with the perfect time tracking solution. 
-                    Our intelligent system can help you capture 30+ minutes per day 
-                    that would otherwise go unbilled or untracked.
+                    {selectedMode === "legal" || uiConfig.legalMode
+                      ? "BillExact — Zero-rejection legal timekeeping. Our intelligent system helps you capture every billable moment with UTBMS, LEDES 1998B, and carrier-rule pre-checks."
+                      : "TimeWise — AI time tracking. Let's get you set up with the perfect time tracking solution. Our intelligent system can help you capture 30+ minutes per day that would otherwise go untracked."}
                   </p>
                 </div>
 
@@ -144,8 +144,10 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
                     <div className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
                       <div>
-                        <p className="font-medium">Compliance Ready</p>
-                        <p className="text-sm text-muted-foreground">LEDES export for legal billing</p>
+                        <p className="font-medium">{selectedMode === "legal" || uiConfig.legalMode ? "Legal Compliance" : "Compliance Ready"}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedMode === "legal" || uiConfig.legalMode ? "UTBMS, LEDES 1998B, and carrier-rule pre-checks" : "Professional export formats"}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
