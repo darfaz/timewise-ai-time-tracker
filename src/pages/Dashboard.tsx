@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, CheckCircle, Download, Search, Mail, Calendar, Globe, FileText, Check, Edit, Split, Copy, Trash2, HelpCircle, Plus, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle, Download, Search, Mail, Calendar, Globe, FileText, Check, Edit, Split, Copy, Trash2, HelpCircle, Plus, Filter, AlertTriangle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,10 @@ const Dashboard = () => {
     narrative: activity.windowTitle || "AI-generated narrative describing the work performed...",
     hours: (activity.duration / 60).toFixed(2),
     status: index % 3 === 0 ? "pending" : "approved" as "pending" | "approved",
+    // Legal mode specific fields
+    complianceStatus: uiConfig.legalMode ? (index % 5 === 0 ? "warning" : index % 7 === 0 ? "error" : "ok") as "ok" | "warning" | "error" : "ok",
+    requiresLedes: uiConfig.legalMode && index % 4 === 0,
+    utbmsCode: uiConfig.legalMode && index % 4 === 0 ? "L210" : undefined,
   }));
 
   // Filter entries
@@ -267,7 +271,7 @@ const Dashboard = () => {
 
                     {/* Main Text */}
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {uiConfig.legalMode ? (
                           <>
                             <span className="font-bold text-foreground">{entry.client}</span>
@@ -280,6 +284,25 @@ const Dashboard = () => {
                         {entry.status === "pending" && (
                           <Badge variant="outline" className="ml-2">
                             Pending
+                          </Badge>
+                        )}
+                        {/* Legal mode: Compliance badges */}
+                        {uiConfig.legalMode && entry.complianceStatus === "warning" && (
+                          <Badge variant="outline" className="ml-2 border-yellow-500 text-yellow-600">
+                            <AlertTriangle className="mr-1 h-3 w-3" />
+                            Compliance Warning
+                          </Badge>
+                        )}
+                        {uiConfig.legalMode && entry.complianceStatus === "error" && (
+                          <Badge variant="outline" className="ml-2 border-red-500 text-red-600">
+                            <AlertCircle className="mr-1 h-3 w-3" />
+                            Needs Review
+                          </Badge>
+                        )}
+                        {/* Legal mode: UTBMS/LEDES indicators */}
+                        {uiConfig.legalMode && entry.requiresLedes && entry.utbmsCode && (
+                          <Badge variant="secondary" className="ml-2">
+                            {entry.utbmsCode}
                           </Badge>
                         )}
                       </div>
