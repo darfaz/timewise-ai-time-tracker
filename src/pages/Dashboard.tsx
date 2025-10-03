@@ -1,468 +1,277 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { StatCard } from "@/components/StatCard";
-import { TodaysOverview } from "@/components/TodaysOverview";
-import { TopProjectsWidget } from "@/components/TopProjectsWidget";
-import { QuickActions } from "@/components/QuickActions";
-import { CompactActivityItem } from "@/components/CompactActivityItem";
-import { DateRangeSelector } from "@/components/DateRangeSelector";
-import { TimeByCategoryChart } from "@/components/TimeByCategoryChart";
-import { DailyTrendChart } from "@/components/DailyTrendChart";
-import { TimeByMatterChart } from "@/components/TimeByMatterChart";
-import { AlertCard } from "@/components/AlertCard";
-import { ProductivityInsights } from "@/components/ProductivityInsights";
-import { Clock, DollarSign, FolderKanban, TrendingUp, AlertCircle, AlertTriangle, CheckCircle, RefreshCw, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle, Download, Search, Mail, Calendar, Globe, FileText, Check, Edit, Split, Copy, Trash2, HelpCircle, Plus, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useActivities } from "@/hooks/useApi";
 import { useProjects } from "@/hooks/useProjects";
 import { useMatters, useClients } from "@/hooks/useApi";
-import { useConfig } from "@/contexts/ConfigContext";
-import { mockWeeklyData } from "@/lib/mockData";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { DateRange } from "react-day-picker";
-import { startOfToday, startOfYesterday, startOfWeek, endOfWeek, subWeeks, format, subDays } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { format, addDays, subDays } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
-  const { LEGAL_MODE } = useConfig();
-  const navigate = useNavigate();
   const { data: activities = [], isLoading: activitiesLoading } = useActivities();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: matters = [] } = useMatters();
   const { data: clients = [] } = useClients();
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: startOfToday(),
-    to: startOfToday(),
-  });
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [filterView, setFilterView] = useState<"all" | "pending">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLastUpdated(new Date());
-    }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Quick range handlers
-  const quickRanges = [
-    {
-      label: "Today",
-      onClick: () => setDateRange({ from: startOfToday(), to: startOfToday() }),
-    },
-    {
-      label: "Yesterday",
-      onClick: () => setDateRange({ from: startOfYesterday(), to: startOfYesterday() }),
-    },
-    {
-      label: "This Week",
-      onClick: () => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) }),
-    },
-    {
-      label: "Last Week",
-      onClick: () => {
-        const lastWeek = subWeeks(new Date(), 1);
-        setDateRange({ from: startOfWeek(lastWeek), to: endOfWeek(lastWeek) });
-      },
-    },
-  ];
-
-  const todayHours = activities.reduce((sum, activity) => sum + activity.duration, 0) / 60;
-  const billableHours = activities
-    .filter((a) => a.projectId && projects.find((p) => p.id === a.projectId)?.billableRate)
-    .reduce((sum, activity) => sum + activity.duration, 0) / 60;
-  const activeProjects = projects.filter((p) => p.status === "active").length;
-  const weeklyTotal = mockWeeklyData.reduce((sum, day) => sum + day.hours, 0);
-
-  // Calculate weekly hours per project
-  const projectWeeklyHours = projects.map((project) => ({
-    projectId: project.id,
-    hours: Math.random() * 20 + 5, // Mock data - replace with real calculation
-  })).sort((a, b) => b.hours - a.hours);
-
-  // Calculate category distribution for general mode
-  const categoryData = activities.reduce((acc, activity) => {
-    const category = activity.category || "Uncategorized";
-    const existing = acc.find((c) => c.name === category);
-    if (existing) {
-      existing.value += activity.duration;
-    } else {
-      acc.push({ name: category, value: activity.duration, color: `hsl(${Math.random() * 360}, 70%, 50%)` });
-    }
-    return acc;
-  }, [] as { name: string; value: number; color: string }[]);
-
-  // Calculate daily trend (last 7 days)
-  const dailyTrend = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), 6 - i);
-    return {
-      date: format(date, "EEE"),
-      hours: Math.random() * 8 + 2, // Mock data
-    };
-  });
-
-  // Legal mode: Calculate matter distribution
-  const matterData = matters.slice(0, 5).map((matter) => ({
-    matter: matter.name,
-    hours: Math.random() * 15 + 5, // Mock data
-    color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+  // Mock data for timesheet entries
+  const timeEntries = activities.map((activity, index) => ({
+    id: activity.id,
+    time: format(activity.timestamp, "h:mm a"),
+    source: ["Mail", "Calendar", "Web", "Note"][index % 4] as "Mail" | "Calendar" | "Web" | "Note",
+    client: clients[index % clients.length]?.name || "Client " + (index + 1),
+    matter: matters[index % matters.length]?.name || "Matter " + (index + 1),
+    narrative: activity.windowTitle || "AI-generated narrative describing the work performed...",
+    hours: (activity.duration / 60).toFixed(2),
+    status: index % 3 === 0 ? "pending" : "approved" as "pending" | "approved",
   }));
 
-  // Legal mode: Compliance metrics
-  const totalEntries = activities.length;
-  const compliantEntries = Math.floor(totalEntries * 0.85);
-  const warningEntries = Math.floor(totalEntries * 0.10);
-  const errorEntries = totalEntries - compliantEntries - warningEntries;
-  const complianceRate = totalEntries > 0 ? (compliantEntries / totalEntries) * 100 : 100;
-  const unbilledEntries = activities.filter((a) => !a.projectId).length;
+  // Filter entries
+  const filteredEntries = timeEntries.filter((entry) => {
+    const matchesFilter = filterView === "all" || entry.status === filterView;
+    const matchesSearch = entry.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          entry.matter.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          entry.narrative.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
-  // Productivity insights
-  const mostProductiveHour = "9:00 AM - 11:00 AM";
-  const topApps = [
-    { name: "VS Code", minutes: 240 },
-    { name: "Chrome", minutes: 180 },
-    { name: "Slack", minutes: 90 },
-  ];
-  const distractions = Math.floor(Math.random() * 15) + 5;
+  // Calculate stats
+  const totalHours = filteredEntries.reduce((sum, entry) => sum + parseFloat(entry.hours), 0);
+  const approvedEntries = filteredEntries.filter((e) => e.status === "approved");
+  const approvedHours = approvedEntries.reduce((sum, entry) => sum + parseFloat(entry.hours), 0);
+  const pendingCount = filteredEntries.filter((e) => e.status === "pending").length;
 
-  const handleExportReport = () => {
-    // Mock export functionality
-    const blob = new Blob(["Dashboard Report"], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dashboard-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const sourceIcons = {
+    Mail: Mail,
+    Calendar: Calendar,
+    Web: Globe,
+    Note: FileText,
   };
 
-  if (LEGAL_MODE) {
-    // Legal Mode Dashboard
-    return (
-      <div className="space-y-6">
-        {/* Header with Date Range and Actions */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              Last updated: {Math.floor((new Date().getTime() - lastUpdated.getTime()) / 1000)}s ago
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <DateRangeSelector
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              quickRanges={quickRanges}
-            />
-            <Button variant="outline" size="sm" onClick={() => setLastUpdated(new Date())}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
+  return (
+    <div className="flex h-full flex-col bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-card px-6 py-4">
+        <div className="flex items-center justify-between">
+          {/* Date Navigation */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentDate(subDays(currentDate, 1))}
+            >
+              <ChevronLeft className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportReport}>
+            <h1 className="text-2xl font-bold text-foreground">
+              {format(currentDate, "EEEE, MMMM d, yyyy")}
+            </h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentDate(addDays(currentDate, 1))}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Mark as Complete
+            </Button>
+            <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
-              Export Report
+              Export
             </Button>
           </div>
         </div>
 
-        {/* Billable Metrics */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-        >
-          <StatCard
-            title="Today's Billable Hours"
-            value={billableHours.toFixed(1)}
-            subtitle="Logged today"
-            icon={Clock}
-            variant="default"
-          />
-          <StatCard
-            title="This Week's Hours"
-            value={weeklyTotal.toFixed(1)}
-            subtitle="vs 40h target"
-            icon={TrendingUp}
-            variant={weeklyTotal >= 40 ? "success" : "warning"}
-          />
-          <StatCard
-            title="Compliance Rate"
-            value={`${complianceRate.toFixed(0)}%`}
-            subtitle="Clean entries"
-            icon={CheckCircle}
-            variant={complianceRate >= 90 ? "success" : "warning"}
-          />
-          <StatCard
-            title="Unbilled Entries"
-            value={unbilledEntries.toString()}
-            subtitle="Needs matter assignment"
-            icon={AlertCircle}
-            variant={unbilledEntries > 0 ? "warning" : "success"}
-          />
-        </motion.div>
-
-        {/* Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <TimeByMatterChart data={matterData} />
-          <DailyTrendChart data={dailyTrend} />
+        {/* Stats Strip */}
+        <div className="mt-4 flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Total:</span>
+            <span className="font-bold text-foreground">{totalHours.toFixed(2)}h</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Approved:</span>
+            <span className="font-bold text-foreground">{approvedHours.toFixed(2)}h</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Approved Count:</span>
+            <span className="font-bold text-foreground">{approvedEntries.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Pending:</span>
+            <span className="font-bold text-foreground">{pendingCount}</span>
+          </div>
         </div>
+      </div>
 
-        {/* Alerts & Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <h2 className="mb-4 text-xl font-bold text-foreground">Alerts & Actions</h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            <AlertCard
-              title="Entries Needing Review"
-              count={errorEntries}
-              variant="error"
-              icon={AlertCircle}
-              onView={() => navigate("/ledes-export")}
-            />
-            <AlertCard
-              title="Compliance Warnings"
-              count={warningEntries}
-              variant="warning"
-              icon={AlertTriangle}
-              onView={() => navigate("/ledes-export")}
-            />
-            <AlertCard
-              title="Ready to Export"
-              count={compliantEntries}
-              variant="success"
-              icon={CheckCircle}
-              onView={() => navigate("/ledes-export")}
+      {/* Toolbar */}
+      <div className="border-b border-border bg-card px-6 py-3">
+        <div className="flex items-center justify-between">
+          {/* Filter Chips */}
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={filterView === "all" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setFilterView("all")}
+            >
+              View All
+            </Badge>
+            <Badge
+              variant={filterView === "pending" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setFilterView("pending")}
+            >
+              Pending Only
+            </Badge>
+            <Button variant="outline" size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
+            <Button variant="outline" size="sm">
+              <Filter className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search entries..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
             />
           </div>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Recent Matters and Activity */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="rounded-xl bg-card p-6 shadow-card"
-          >
-            <h2 className="mb-4 text-xl font-bold text-foreground">Recent Matters</h2>
-            <div className="space-y-3">
-              {matters.slice(0, 5).map((matter) => (
-                <div
-                  key={matter.id}
-                  className="flex cursor-pointer items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted"
-                  onClick={() => navigate("/matters")}
-                >
-                  <div>
-                    <p className="font-medium text-foreground">{matter.name}</p>
-                    <p className="text-sm text-muted-foreground">{matter.clientName}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">{matter.status}</p>
-                    <p className="text-xs text-muted-foreground">#{matter.matterId}</p>
-                  </div>
-                </div>
+      {/* Timesheet List */}
+      <div className="flex-1 overflow-auto">
+        <div className="px-6 py-4">
+          {activitiesLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
               ))}
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-            className="rounded-xl bg-card p-6 shadow-card"
-          >
-            <h2 className="mb-4 text-xl font-bold text-foreground">Recent Activity</h2>
-            {activitiesLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />
-                ))}
+          ) : filteredEntries.length === 0 ? (
+            <div className="flex h-64 items-center justify-center text-center">
+              <div>
+                <p className="text-lg font-medium text-muted-foreground">No entries found</p>
+                <p className="text-sm text-muted-foreground">Try adjusting your filters or search query</p>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {activities.slice(0, 5).map((activity, index) => {
-                  const project = projects.find((p) => p.id === activity.projectId);
-                  return <CompactActivityItem key={activity.id} activity={activity} project={project} index={index} />;
-                })}
-              </div>
-            )}
-          </motion.div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredEntries.map((entry, index) => {
+                const SourceIcon = sourceIcons[entry.source];
+                return (
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.02 }}
+                    className="group grid grid-cols-[80px_40px_200px_1fr_80px] items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+                  >
+                    {/* Time */}
+                    <div className="text-sm text-muted-foreground">
+                      {entry.time}
+                    </div>
+
+                    {/* Source Icon */}
+                    <div className="flex items-center justify-center">
+                      <SourceIcon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+
+                    {/* Action Icons */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Approve"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Split"
+                      >
+                        <Split className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Duplicate"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Why?"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Main Text */}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground">{entry.client}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="font-bold text-foreground">{entry.matter}</span>
+                        {entry.status === "pending" && (
+                          <Badge variant="outline" className="ml-2">
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="truncate text-sm text-muted-foreground">{entry.narrative}</p>
+                    </div>
+
+                    {/* Hours */}
+                    <div className="text-right font-bold text-foreground">
+                      {entry.hours}h
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
-    );
-  }
-
-  // General Mode Dashboard
-  return (
-    <div className="space-y-6">
-      {/* Header with Date Range and Actions */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Last updated: {Math.floor((new Date().getTime() - lastUpdated.getTime()) / 1000)}s ago
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <DateRangeSelector
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            quickRanges={quickRanges}
-          />
-          <Button variant="outline" size="sm" onClick={() => setLastUpdated(new Date())}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportReport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export Report
-          </Button>
-        </div>
-      </div>
-
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-primary p-8 text-white shadow-hover"
-      >
-        <div className="relative z-10">
-          <h1 className="mb-2 text-4xl font-bold">Welcome back!</h1>
-          <p className="mb-4 text-lg opacity-90">You've tracked {todayHours.toFixed(1)} hours today</p>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            <span className="text-sm font-medium">
-              {weeklyTotal.toFixed(1)} hours this week
-            </span>
-          </div>
-        </div>
-        <div className="absolute right-0 top-0 h-full w-1/2 opacity-10">
-          <Clock className="absolute right-8 top-8 h-64 w-64" />
-        </div>
-      </motion.div>
-
-      {/* Stats Grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-      >
-        <StatCard
-          title="Today's Hours"
-          value={todayHours.toFixed(1)}
-          subtitle="Keep up the great work!"
-          icon={Clock}
-          variant="default"
-        />
-        <StatCard
-          title="Billable Hours"
-          value={billableHours.toFixed(1)}
-          subtitle="Ready to invoice"
-          icon={DollarSign}
-          variant="success"
-        />
-        <StatCard
-          title="Active Projects"
-          value={activeProjects.toString()}
-          subtitle="In progress"
-          icon={FolderKanban}
-          variant="warning"
-        />
-        <StatCard
-          title="Weekly Total"
-          value={weeklyTotal.toFixed(1)}
-          subtitle="This week"
-          icon={TrendingUp}
-          variant="default"
-        />
-      </motion.div>
-
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TimeByCategoryChart data={categoryData} />
-        <DailyTrendChart data={dailyTrend} />
-      </div>
-
-      {/* Today's Overview and Top Projects */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TodaysOverview hoursToday={todayHours} goalHours={8} />
-        <TopProjectsWidget projects={projects} weeklyHours={projectWeeklyHours} />
-      </div>
-
-      {/* Productivity Insights */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-      >
-        <h2 className="mb-4 text-xl font-bold text-foreground">Productivity Insights</h2>
-        <ProductivityInsights
-          mostProductiveHour={mostProductiveHour}
-          topApps={topApps}
-          distractions={distractions}
-        />
-      </motion.div>
-
-      {/* Quick Actions */}
-      <QuickActions />
-
-      {/* Weekly Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-        className="rounded-xl bg-card p-6 shadow-card"
-      >
-        <h2 className="mb-6 text-xl font-bold text-foreground">Weekly Overview</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={mockWeeklyData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis dataKey="day" className="text-muted-foreground" />
-            <YAxis className="text-muted-foreground" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "0.5rem",
-              }}
-            />
-            <Legend />
-            <Bar dataKey="billable" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} name="Billable" />
-            <Bar dataKey="nonBillable" stackId="a" fill="hsl(var(--muted-foreground))" radius={[8, 8, 0, 0]} name="Non-Billable" />
-          </BarChart>
-        </ResponsiveContainer>
-      </motion.div>
-
-      {/* Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-        className="rounded-xl bg-card p-6 shadow-card"
-      >
-        <h2 className="mb-6 text-xl font-bold text-foreground">Recent Activity</h2>
-        {activitiesLoading ? (
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {activities.slice(0, 10).map((activity, index) => {
-              const project = projects.find((p) => p.id === activity.projectId);
-              return <CompactActivityItem key={activity.id} activity={activity} project={project} index={index} />;
-            })}
-          </div>
-        )}
-      </motion.div>
     </div>
   );
 };
