@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Matter, mockClients } from "@/lib/mockData";
+import { useUiConfig } from "@/contexts/ConfigContext";
 
 interface MatterDialogProps {
   matter: Matter | null;
@@ -45,6 +47,7 @@ const billingRulesOptions = [
 ];
 
 export const MatterDialog = ({ matter, isOpen, onClose, onSave }: MatterDialogProps) => {
+  const uiConfig = useUiConfig();
   const [matterId, setMatterId] = useState("");
   const [matterName, setMatterName] = useState("");
   const [clientId, setClientId] = useState("");
@@ -53,6 +56,7 @@ export const MatterDialog = ({ matter, isOpen, onClose, onSave }: MatterDialogPr
   const [billingRules, setBillingRules] = useState("");
   const [assignedAttorneys, setAssignedAttorneys] = useState("");
   const [notes, setNotes] = useState("");
+  const [requiresLedes, setRequiresLedes] = useState(false);
 
   useEffect(() => {
     if (matter) {
@@ -64,6 +68,7 @@ export const MatterDialog = ({ matter, isOpen, onClose, onSave }: MatterDialogPr
       setBillingRules(matter.billingRules);
       setAssignedAttorneys(matter.assignedAttorneys.join(", "));
       setNotes(matter.notes);
+      setRequiresLedes((matter as any).requires_ledes || false);
     } else {
       setMatterId("");
       setMatterName("");
@@ -73,6 +78,7 @@ export const MatterDialog = ({ matter, isOpen, onClose, onSave }: MatterDialogPr
       setBillingRules("Standard hourly");
       setAssignedAttorneys("");
       setNotes("");
+      setRequiresLedes(false);
     }
   }, [matter, isOpen]);
 
@@ -90,7 +96,8 @@ export const MatterDialog = ({ matter, isOpen, onClose, onSave }: MatterDialogPr
       totalTimeLogged: matter?.totalTimeLogged || 0,
       lastActivityDate: matter?.lastActivityDate || new Date(),
       createdAt: matter?.createdAt || new Date(),
-    };
+      ...(uiConfig.legalMode && { requires_ledes: requiresLedes }),
+    } as any;
     onSave(matterData);
   };
 
@@ -218,6 +225,24 @@ export const MatterDialog = ({ matter, isOpen, onClose, onSave }: MatterDialogPr
               rows={3}
             />
           </div>
+
+          {uiConfig.legalMode && (
+            <div className="flex items-center justify-between space-x-4 rounded-lg border border-border bg-muted/50 p-4">
+              <div className="space-y-0.5 flex-1">
+                <Label htmlFor="requiresLedes" className="text-base font-medium">
+                  LEDES Export Required
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Turns on UTBMS coding, LEDES validation & export for this matter.
+                </p>
+              </div>
+              <Switch
+                id="requiresLedes"
+                checked={requiresLedes}
+                onCheckedChange={setRequiresLedes}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
