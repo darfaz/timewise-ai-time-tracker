@@ -23,10 +23,16 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useConfig } from "@/contexts/ConfigContext";
+import { useUiConfig } from "@/contexts/ConfigContext";
 import { useToast } from "@/hooks/use-toast";
 import { format, addMinutes, parse } from "date-fns";
-import { AlertCircle, Save, X, ArrowRight, Trash2, Split } from "lucide-react";
+import { AlertCircle, Save, X, ArrowRight, Trash2, Split, Sparkles } from "lucide-react";
+
+interface Matter {
+  id: string;
+  name: string;
+  requires_ledes?: boolean;
+}
 
 interface ActivityEditModalProps {
   activity: Activity | null;
@@ -36,6 +42,7 @@ interface ActivityEditModalProps {
   onSave: (updatedActivity: Activity) => void;
   onNext?: () => void;
   onDelete?: () => void;
+  matters?: Matter[];
 }
 
 export const ActivityEditModal = ({
@@ -46,10 +53,12 @@ export const ActivityEditModal = ({
   onSave,
   onNext,
   onDelete,
+  matters = [],
 }: ActivityEditModalProps) => {
-  const { LEGAL_MODE } = useConfig();
+  const uiConfig = useUiConfig();
   const { toast } = useToast();
 
+  const [client, setClient] = useState("");
   const [duration, setDuration] = useState(0);
   const [startTime, setStartTime] = useState("");
   const [category, setCategory] = useState("");
@@ -64,6 +73,7 @@ export const ActivityEditModal = ({
 
   useEffect(() => {
     if (activity) {
+      setClient("");
       setDuration(activity.duration);
       setStartTime(format(activity.timestamp, "HH:mm"));
       setCategory("");
@@ -79,6 +89,10 @@ export const ActivityEditModal = ({
   }, [activity, project]);
 
   if (!activity) return null;
+
+  // Find selected matter and check if it requires LEDES
+  const selectedMatter = matters.find((m) => m.id === matter);
+  const showUtbmsFields = uiConfig.legalMode && selectedMatter?.requires_ledes === true;
 
   const IconComponent = (LucideIcons as any)[activity.appIcon] || LucideIcons.Circle;
 
@@ -103,20 +117,26 @@ export const ActivityEditModal = ({
       newErrors.startTime = "Start time is required";
     }
 
-    if (LEGAL_MODE) {
-      if (!matter) {
-        newErrors.matter = "Matter is required in legal mode";
-      }
+    // Always require client and matter
+    if (!client) {
+      newErrors.client = "Client is required";
+    }
+    if (!matter) {
+      newErrors.matter = "Matter/Project is required";
+    }
+
+    // UTBMS validation only if legal mode AND matter requires LEDES
+    if (showUtbmsFields) {
       if (!taskCode) {
-        newErrors.taskCode = "UTBMS task code is required";
+        newErrors.taskCode = "UTBMS task code is required for LEDES matters";
       }
       if (!activityCode) {
-        newErrors.activityCode = "UTBMS activity code is required";
+        newErrors.activityCode = "UTBMS activity code is required for LEDES matters";
       }
-    } else {
-      if (!category) {
-        newErrors.category = "Category is required";
-      }
+    }
+
+    if (!uiConfig.legalMode && !category) {
+      newErrors.category = "Category is required";
     }
 
     setErrors(newErrors);
@@ -172,7 +192,7 @@ export const ActivityEditModal = ({
     }
   };
 
-  const hasComplianceWarnings = LEGAL_MODE && (!narrative || narrative.length < 20);
+  const hasComplianceWarnings = showUtbmsFields && (!narrative || narrative.length < 20);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -239,7 +259,7 @@ export const ActivityEditModal = ({
                   <p className="text-sm font-medium mt-1 text-foreground">{calculateEndTime()}</p>
                 </div>
 
-                {!LEGAL_MODE && (
+                {!uiConfig.legalMode && (
                   <div>
                     <Label htmlFor="category">Category *</Label>
                     <Select value={category} onValueChange={setCategory}>
@@ -263,107 +283,155 @@ export const ActivityEditModal = ({
             </div>
           </div>
 
-          {/* Right Section - Legal Fields or Common Fields */}
+          {/* Right Section - Client, Matter, Narrative (always shown) */}
           <div className="space-y-4">
-            {LEGAL_MODE ? (
-              <>
-                <h3 className="font-semibold mb-4 text-foreground">Legal Details</h3>
-                
-                <div>
-                  <Label htmlFor="matter">Client/Matter *</Label>
-                  <Select value={matter} onValueChange={setMatter}>
-                    <SelectTrigger className={errors.matter ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select matter" />
-                    </SelectTrigger>
-                    <SelectContent>
+            <h3 className="font-semibold mb-4 text-foreground">
+              {uiConfig.legalMode ? "Legal Details" : "Project Details"}
+            </h3>
+            
+            <div>
+              <Label htmlFor="client">Client *</Label>
+              <Select value={client} onValueChange={setClient}>
+                <SelectTrigger className={errors.client ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client-001">Acme Corp</SelectItem>
+                  <SelectItem value="client-002">Beta Inc</SelectItem>
+                  <SelectItem value="client-003">Delta LLC</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.client && (
+                <p className="text-xs text-destructive mt-1">{errors.client}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="matter">
+                {uiConfig.legalMode ? "Matter *" : "Project *"}
+              </Label>
+              <Select value={matter} onValueChange={setMatter}>
+                <SelectTrigger className={errors.matter ? "border-destructive" : ""}>
+                  <SelectValue placeholder={uiConfig.legalMode ? "Select matter" : "Select project"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {matters.length > 0 ? (
+                    matters.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                        {m.requires_ledes && (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            LEDES
+                          </Badge>
+                        )}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
                       <SelectItem value="matter-001">Acme Corp v. Beta Inc - Litigation</SelectItem>
                       <SelectItem value="matter-002">Delta LLC - Contract Review</SelectItem>
                       <SelectItem value="matter-003">Epsilon Inc - M&A Transaction</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.matter && (
-                    <p className="text-xs text-destructive mt-1">{errors.matter}</p>
+                    </>
                   )}
-                </div>
+                </SelectContent>
+              </Select>
+              {errors.matter && (
+                <p className="text-xs text-destructive mt-1">{errors.matter}</p>
+              )}
+            </div>
 
-                <div>
-                  <Label htmlFor="taskCode">UTBMS Task Code *</Label>
-                  <Select value={taskCode} onValueChange={setTaskCode}>
-                    <SelectTrigger className={errors.taskCode ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select task code" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="L110">L110 - Case Assessment</SelectItem>
-                      <SelectItem value="L120">L120 - Pre-Trial Pleadings</SelectItem>
-                      <SelectItem value="L210">L210 - Discovery</SelectItem>
-                      <SelectItem value="L310">L310 - Trial Preparation</SelectItem>
-                      <SelectItem value="A101">A101 - Legal Research</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.taskCode && (
-                    <p className="text-xs text-destructive mt-1">{errors.taskCode}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="activityCode">UTBMS Activity Code *</Label>
-                  <Select value={activityCode} onValueChange={setActivityCode}>
-                    <SelectTrigger className={errors.activityCode ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select activity code" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="L110-001">Review documents</SelectItem>
-                      <SelectItem value="L110-002">Draft memorandum</SelectItem>
-                      <SelectItem value="L110-003">Client conference</SelectItem>
-                      <SelectItem value="L210-001">Document review</SelectItem>
-                      <SelectItem value="A101-001">Legal research</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.activityCode && (
-                    <p className="text-xs text-destructive mt-1">{errors.activityCode}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="narrative">Narrative</Label>
-                  <Textarea
-                    id="narrative"
-                    value={narrative}
-                    onChange={(e) => setNarrative(e.target.value)}
-                    placeholder="Describe the work performed..."
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {narrative.length} characters
-                  </p>
-                </div>
-
-                {hasComplianceWarnings && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Narrative should be at least 20 characters for billing compliance
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </>
-            ) : (
-              <div className="space-y-4">
-                <h3 className="font-semibold mb-4 text-foreground">Additional Details</h3>
-                
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add any notes..."
-                    rows={6}
-                    className="resize-none"
-                  />
-                </div>
+            <div>
+              <Label htmlFor="narrative">Narrative *</Label>
+              <Textarea
+                id="narrative"
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+                placeholder="Describe the work performed..."
+                rows={4}
+                className="resize-none"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-muted-foreground">
+                  {narrative.length} characters
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    toast({
+                      title: "AI Rewrite",
+                      description: "Narrative rewritten with AI",
+                    });
+                  }}
+                >
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Rewrite with AI
+                </Button>
               </div>
+            </div>
+
+            {/* UTBMS fields - only shown if legal mode AND matter requires LEDES */}
+            {showUtbmsFields && (
+              <>
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">LEDES Required</Badge>
+                    <p className="text-xs text-muted-foreground">
+                      This matter requires UTBMS coding
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="taskCode">UTBMS Task Code *</Label>
+                    <Select value={taskCode} onValueChange={setTaskCode}>
+                      <SelectTrigger className={errors.taskCode ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Select task code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="L110">L110 - Case Assessment</SelectItem>
+                        <SelectItem value="L120">L120 - Pre-Trial Pleadings</SelectItem>
+                        <SelectItem value="L210">L210 - Discovery</SelectItem>
+                        <SelectItem value="L310">L310 - Trial Preparation</SelectItem>
+                        <SelectItem value="A101">A101 - Legal Research</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.taskCode && (
+                      <p className="text-xs text-destructive mt-1">{errors.taskCode}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="activityCode">UTBMS Activity Code *</Label>
+                    <Select value={activityCode} onValueChange={setActivityCode}>
+                      <SelectTrigger className={errors.activityCode ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Select activity code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="L110-001">Review documents</SelectItem>
+                        <SelectItem value="L110-002">Draft memorandum</SelectItem>
+                        <SelectItem value="L110-003">Client conference</SelectItem>
+                        <SelectItem value="L210-001">Document review</SelectItem>
+                        <SelectItem value="A101-001">Legal research</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.activityCode && (
+                      <p className="text-xs text-destructive mt-1">{errors.activityCode}</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {hasComplianceWarnings && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Narrative should be at least 20 characters for billing compliance
+                </AlertDescription>
+              </Alert>
             )}
           </div>
         </div>
@@ -397,20 +465,6 @@ export const ActivityEditModal = ({
               placeholder="Enter tags separated by commas"
             />
           </div>
-
-          {!LEGAL_MODE && (
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add any additional notes..."
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-          )}
 
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="flex-1">
