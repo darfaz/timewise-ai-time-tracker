@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiClient } from '@/lib/api';
 
 interface ConfigContextType {
   LEGAL_MODE: boolean;
   PRODUCT_NAME: string;
   API_BASE_URL: string;
+  isConnected: boolean;
   setLegalMode: (mode: boolean) => void;
   setApiBaseUrl: (url: string) => void;
   toggleLegalMode: () => void;
@@ -16,6 +18,7 @@ const STORAGE_KEY = 'timewise_config';
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [LEGAL_MODE, setLegalModeState] = useState<boolean>(false);
   const [API_BASE_URL, setApiBaseUrlState] = useState<string>('http://localhost:3000/api');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -37,6 +40,30 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [LEGAL_MODE, API_BASE_URL]);
 
+  // Update API client when URL changes and check connection
+  useEffect(() => {
+    apiClient.updateBaseURL(API_BASE_URL);
+    
+    // Check backend connection
+    const checkConnection = async () => {
+      try {
+        await apiClient.checkHealth();
+        setIsConnected(true);
+      } catch (error) {
+        setIsConnected(false);
+      }
+    };
+
+    if (!apiClient.isMockMode()) {
+      checkConnection();
+      // Check connection every 30 seconds
+      const interval = setInterval(checkConnection, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setIsConnected(false);
+    }
+  }, [API_BASE_URL]);
+
   const PRODUCT_NAME = LEGAL_MODE ? 'BillExact' : 'TimeWise';
 
   const setLegalMode = (mode: boolean) => {
@@ -57,6 +84,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         LEGAL_MODE,
         PRODUCT_NAME,
         API_BASE_URL,
+        isConnected,
         setLegalMode,
         setApiBaseUrl,
         toggleLegalMode,

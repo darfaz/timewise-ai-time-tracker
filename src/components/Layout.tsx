@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Clock, LayoutDashboard, List, FileText, FolderKanban, Settings, Briefcase, Tags, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { useConfig } from "@/contexts/ConfigContext";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -72,17 +73,20 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
 
-            <Link
-              to="/settings"
-              className={cn(
-                "rounded-lg p-2 transition-colors",
-                isActive("/settings")
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Settings className="h-5 w-5" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <ConnectionStatus />
+              <Link
+                to="/settings"
+                className={cn(
+                  "rounded-lg p-2 transition-colors",
+                  isActive("/settings")
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <Settings className="h-5 w-5" />
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
