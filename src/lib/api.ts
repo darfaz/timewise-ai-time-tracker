@@ -98,6 +98,17 @@ class ApiClient {
     return this.useMockData;
   }
 
+  // Config
+  async getConfig() {
+    try {
+      const { data } = await this.client.get('/config');
+      return data;
+    } catch (error) {
+      // Return defaults if API not available
+      return { legal_mode: false, product_name: null };
+    }
+  }
+
   // Health & Status
   async checkHealth() {
     const { data } = await this.client.get('/health');

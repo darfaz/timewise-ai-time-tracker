@@ -48,20 +48,32 @@ const PageLoader = () => (
 );
 
 const AppContent = () => {
-  const { onboardingCompleted, completeOnboarding } = useConfig();
+  const { uiConfig, onboardingCompleted, completeOnboarding } = useConfig();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     // Check if onboarding should be shown
-    if (!onboardingCompleted) {
+    if (!onboardingCompleted && uiConfig.loaded) {
       setShowOnboarding(true);
     }
-  }, [onboardingCompleted]);
+  }, [onboardingCompleted, uiConfig.loaded]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     completeOnboarding();
   };
+
+  // Show loading state while config is loading
+  if (!uiConfig.loaded) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <Skeleton className="mx-auto mb-4 h-12 w-12 rounded-full" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>

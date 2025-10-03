@@ -1,7 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiClient } from '@/lib/api';
 
+interface UiConfig {
+  legalMode: boolean;
+  productName: string;
+  loaded: boolean;
+}
+
 interface ConfigContextType {
+  uiConfig: UiConfig;
   LEGAL_MODE: boolean;
   PRODUCT_NAME: string;
   API_BASE_URL: string;
@@ -18,12 +25,57 @@ const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 const STORAGE_KEY = 'timewise_config';
 
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
-  const [LEGAL_MODE, setLegalModeState] = useState<boolean>(false);
+  const [uiConfig, setUiConfig] = useState<UiConfig>({
+    legalMode: false,
+    productName: 'TimeWise',
+    loaded: false,
+  });
   const [API_BASE_URL, setApiBaseUrlState] = useState<string>('http://localhost:3000/api');
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(false);
 
-  // Load from localStorage on mount
+  // Fetch config from API on mount
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        // Get URL override for dev
+        const urlParams = new URLSearchParams(window.location.search);
+        const legalParam = urlParams.get('legal');
+        
+        // Call API to get config
+        const apiConfig = await apiClient.getConfig();
+        
+        // Determine legal mode: URL param takes precedence
+        let legalMode = apiConfig.legal_mode || false;
+        if (legalParam === '1') {
+          legalMode = true;
+        } else if (legalParam === '0') {
+          legalMode = false;
+        }
+        
+        // Determine product name
+        const productName = apiConfig.product_name || (legalMode ? 'BillExact' : 'TimeWise');
+        
+        setUiConfig({
+          legalMode,
+          productName,
+          loaded: true,
+        });
+      } catch (error) {
+        console.error('Failed to fetch config:', error);
+        // Set defaults on error
+        setUiConfig({
+          legalMode: false,
+          productName: 'TimeWise',
+          loaded: true,
+        });
+      }
+    };
+
+    fetchConfig();
+  }, [API_BASE_URL]);
+
+  // Load other settings from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     const onboardingComplete = localStorage.getItem('onboarding_completed');
@@ -31,7 +83,6 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     if (stored) {
       try {
         const config = JSON.parse(stored);
-        setLegalModeState(config.LEGAL_MODE ?? false);
         setApiBaseUrlState(config.API_BASE_URL ?? 'http://localhost:3000/api');
       } catch (error) {
         console.error('Failed to parse stored config:', error);
@@ -43,9 +94,9 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
 
   // Save to localStorage whenever settings change
   useEffect(() => {
-    const config = { LEGAL_MODE, API_BASE_URL };
+    const config = { API_BASE_URL };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  }, [LEGAL_MODE, API_BASE_URL]);
+  }, [API_BASE_URL]);
 
   // Update API client when URL changes and check connection
   useEffect(() => {
@@ -71,10 +122,12 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [API_BASE_URL]);
 
-  const PRODUCT_NAME = LEGAL_MODE ? 'BillExact' : 'TimeWise';
-
   const setLegalMode = (mode: boolean) => {
-    setLegalModeState(mode);
+    setUiConfig(prev => ({
+      ...prev,
+      legalMode: mode,
+      productName: mode ? 'BillExact' : 'TimeWise',
+    }));
   };
 
   const setApiBaseUrl = (url: string) => {
@@ -82,7 +135,11 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleLegalMode = () => {
-    setLegalModeState(prev => !prev);
+    setUiConfig(prev => ({
+      ...prev,
+      legalMode: !prev.legalMode,
+      productName: !prev.legalMode ? 'BillExact' : 'TimeWise',
+    }));
   };
 
   const completeOnboarding = () => {
@@ -92,8 +149,9 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ConfigContext.Provider
       value={{
-        LEGAL_MODE,
-        PRODUCT_NAME,
+        uiConfig,
+        LEGAL_MODE: uiConfig.legalMode,
+        PRODUCT_NAME: uiConfig.productName,
         API_BASE_URL,
         isConnected,
         onboardingCompleted,
@@ -114,4 +172,9 @@ export const useConfig = () => {
     throw new Error('useConfig must be used within a ConfigProvider');
   }
   return context;
+};
+
+export const useUiConfig = () => {
+  const { uiConfig } = useConfig();
+  return uiConfig;
 };
