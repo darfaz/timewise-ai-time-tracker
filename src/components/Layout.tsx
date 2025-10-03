@@ -11,13 +11,14 @@ import { motion } from "framer-motion";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
-  const { LEGAL_MODE, PRODUCT_NAME } = useConfig();
+  const { uiConfig } = useConfig();
+  const { legalMode, productName } = uiConfig;
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Timeline", path: "/timeline", icon: Clock },
     { name: "Timesheet", path: "/timesheet", icon: FileText },
-    ...(LEGAL_MODE 
+    ...(legalMode 
       ? [
           { name: "Matters", path: "/matters", icon: Briefcase },
           { name: "LEDES Export", path: "/ledes-export", icon: FileSpreadsheet },
@@ -45,19 +46,19 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {LEGAL_MODE ? (
+                  {legalMode ? (
                     <Briefcase className="h-5 w-5 text-primary-foreground" />
                   ) : (
                     <List className="h-5 w-5 text-primary-foreground" />
                   )}
                 </motion.div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-foreground">{PRODUCT_NAME}</span>
+                  <span className="text-xl font-bold text-foreground">{productName}</span>
                   <Badge 
-                    variant={LEGAL_MODE ? "default" : "secondary"} 
-                    className={LEGAL_MODE ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
+                    variant={legalMode ? "default" : "secondary"} 
+                    className={legalMode ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
                   >
-                    {LEGAL_MODE ? "Legal" : "Standard"}
+                    {legalMode ? "Legal" : "Standard"}
                   </Badge>
                 </div>
               </Link>

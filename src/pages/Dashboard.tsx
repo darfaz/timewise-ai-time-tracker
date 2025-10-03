@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { useActivities } from "@/hooks/useApi";
 import { useProjects } from "@/hooks/useProjects";
 import { useMatters, useClients } from "@/hooks/useApi";
+import { useUiConfig } from "@/contexts/ConfigContext";
 import { format, addDays, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
+  const uiConfig = useUiConfig();
   const { data: activities = [], isLoading: activitiesLoading } = useActivities();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: matters = [] } = useMatters();
@@ -20,13 +23,29 @@ const Dashboard = () => {
   const [filterView, setFilterView] = useState<"all" | "pending">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Wait for config to load
+  if (!uiConfig.loaded) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="space-y-3 text-center">
+          <Skeleton className="mx-auto h-12 w-12 rounded-full" />
+          <Skeleton className="mx-auto h-4 w-32" />
+        </div>
+      </div>
+    );
+  }
+
   // Mock data for timesheet entries
   const timeEntries = activities.map((activity, index) => ({
     id: activity.id,
     time: format(activity.timestamp, "h:mm a"),
     source: ["Mail", "Calendar", "Web", "Note"][index % 4] as "Mail" | "Calendar" | "Web" | "Note",
-    client: clients[index % clients.length]?.name || "Client " + (index + 1),
-    matter: matters[index % matters.length]?.name || "Matter " + (index + 1),
+    client: uiConfig.legalMode 
+      ? (clients[index % clients.length]?.name || "Client " + (index + 1))
+      : "N/A",
+    matter: uiConfig.legalMode
+      ? (matters[index % matters.length]?.name || "Matter " + (index + 1))
+      : (projects[index % projects.length]?.name || "Project " + (index + 1)),
     narrative: activity.windowTitle || "AI-generated narrative describing the work performed...",
     hours: (activity.duration / 60).toFixed(2),
     status: index % 3 === 0 ? "pending" : "approved" as "pending" | "approved",
@@ -249,9 +268,15 @@ const Dashboard = () => {
                     {/* Main Text */}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground">{entry.client}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="font-bold text-foreground">{entry.matter}</span>
+                        {uiConfig.legalMode ? (
+                          <>
+                            <span className="font-bold text-foreground">{entry.client}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="font-bold text-foreground">{entry.matter}</span>
+                          </>
+                        ) : (
+                          <span className="font-bold text-foreground">{entry.matter}</span>
+                        )}
                         {entry.status === "pending" && (
                           <Badge variant="outline" className="ml-2">
                             Pending
