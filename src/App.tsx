@@ -12,6 +12,7 @@ import Projects from "./pages/Projects";
 import Categories from "./pages/Categories";
 import Matters from "./pages/Matters";
 import Clients from "./pages/Clients";
+import LEDESExport from "./pages/LEDESExport";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/categories" element={<Categories />} />
               <Route path="/matters" element={<Matters />} />
               <Route path="/clients" element={<Clients />} />
+              <Route path="/ledes-export" element={<LEDESExport />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

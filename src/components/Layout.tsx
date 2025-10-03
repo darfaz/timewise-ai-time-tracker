@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Clock, LayoutDashboard, List, FileText, FolderKanban, Settings, Briefcase, Tags } from "lucide-react";
+import { Clock, LayoutDashboard, List, FileText, FolderKanban, Settings, Briefcase, Tags, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useConfig } from "@/contexts/ConfigContext";
@@ -12,10 +12,15 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Timeline", path: "/timeline", icon: Clock },
     { name: "Timesheet", path: "/timesheet", icon: FileText },
-    { name: "Projects", path: "/projects", icon: FolderKanban },
     ...(LEGAL_MODE 
-      ? [{ name: "Matters", path: "/matters", icon: Briefcase }] 
-      : [{ name: "Categories", path: "/categories", icon: Tags }]
+      ? [
+          { name: "Matters", path: "/matters", icon: Briefcase },
+          { name: "LEDES Export", path: "/ledes-export", icon: FileSpreadsheet },
+        ] 
+      : [
+          { name: "Projects", path: "/projects", icon: FolderKanban },
+          { name: "Categories", path: "/categories", icon: Tags },
+        ]
     ),
   ];
 
