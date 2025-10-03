@@ -307,8 +307,8 @@ const LEDESExport = () => {
       <ExportProgressModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        format={exportFormat}
         entries={filteredEntries}
+        hasLedesRequired={true}
       />
     </div>
   );

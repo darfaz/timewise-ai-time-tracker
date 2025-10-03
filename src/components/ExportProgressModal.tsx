@@ -9,36 +9,55 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BillingEntry } from "@/lib/billingData";
 import { format as formatDate } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useUiConfig } from "@/contexts/ConfigContext";
 
 interface ExportProgressModalProps {
   isOpen: boolean;
   onClose: () => void;
-  format: "LEDES" | "CSV";
   entries: BillingEntry[];
+  startDate?: Date;
+  endDate?: Date;
+  hasLedesRequired?: boolean;
 }
 
 export const ExportProgressModal = ({
   isOpen,
   onClose,
-  format,
   entries,
+  startDate,
+  endDate,
+  hasLedesRequired = false,
 }: ExportProgressModalProps) => {
+  const uiConfig = useUiConfig();
+  const [format, setFormat] = useState<"LEDES" | "CSV">("CSV");
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [filename, setFilename] = useState("");
   const { toast } = useToast();
 
+  // Show format selector only if legal mode AND any entries require LEDES
+  const showFormatSelector = uiConfig.legalMode && hasLedesRequired;
+
   useEffect(() => {
     if (isOpen) {
       setProgress(0);
       setIsComplete(false);
+      
+      // Reset format to CSV if not in legal mode or no LEDES required
+      if (!showFormatSelector) {
+        setFormat("CSV");
+      }
+      
       const timestamp = formatDate(new Date(), "yyyy-MM-dd-HHmm");
       const extension = format === "LEDES" ? "txt" : "csv";
       setFilename(`${format}_Export_${timestamp}.${extension}`);
 
+      // Simulate export progress (replace with actual API call)
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 100) {
@@ -52,7 +71,62 @@ export const ExportProgressModal = ({
 
       return () => clearInterval(interval);
     }
-  }, [isOpen, format]);
+  }, [isOpen, format, showFormatSelector]);
+
+  const handleExport = async () => {
+    try {
+      setProgress(0);
+      setIsComplete(false);
+
+      // Prepare request payload
+      const payload = {
+        start: startDate ? formatDate(startDate, "yyyy-MM-dd") : undefined,
+        end: endDate ? formatDate(endDate, "yyyy-MM-dd") : undefined,
+        approved_only: true,
+      };
+
+      let response;
+      if (format === "LEDES") {
+        // Call LEDES export endpoint
+        response = await fetch("/api/export/ledes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Call CSV export endpoint
+        response = await fetch("/api/invoices/csv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+
+      // Simulate progress for UX
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setIsComplete(true);
+            return 100;
+          }
+          return prev + 20;
+        });
+      }, 300);
+
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Unable to generate export. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Export error:", error);
+    }
+  };
 
   const handleDownload = () => {
     let content = "";
@@ -105,16 +179,37 @@ export const ExportProgressModal = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {isComplete ? "Export Complete" : `Exporting to ${format}`}
+            {isComplete ? "Export Complete" : "Export Invoice"}
           </DialogTitle>
           <DialogDescription>
             {isComplete
-              ? `Your billing export is ready to download`
-              : `Generating ${format} file for ${entries.length} entries...`}
+              ? "Your export is ready to download"
+              : "Select format and export billing entries"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-6">
+          {/* Format Selector - only show if legal mode and LEDES required */}
+          {!isComplete && showFormatSelector && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Export Format</label>
+              <Tabs value={format} onValueChange={(v) => setFormat(v as "LEDES" | "CSV")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="LEDES">LEDES 1998B</TabsTrigger>
+                  <TabsTrigger value="CSV">CSV</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Info Alert */}
+          {!isComplete && (
+            <Alert>
+              <AlertDescription>
+                Only approved entries will be exported.
+              </AlertDescription>
+            </Alert>
+          )}
           {!isComplete && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
@@ -159,6 +254,14 @@ export const ExportProgressModal = ({
                 Download {format} File
               </Button>
             </div>
+          )}
+
+          {/* Start Export Button */}
+          {!isComplete && progress === 0 && (
+            <Button onClick={handleExport} className="w-full gap-2">
+              <FileDown className="h-4 w-4" />
+              Export {entries.length} {entries.length === 1 ? "Entry" : "Entries"}
+            </Button>
           )}
         </div>
       </DialogContent>
