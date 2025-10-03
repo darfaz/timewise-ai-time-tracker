@@ -6,9 +6,11 @@ interface ConfigContextType {
   PRODUCT_NAME: string;
   API_BASE_URL: string;
   isConnected: boolean;
+  onboardingCompleted: boolean;
   setLegalMode: (mode: boolean) => void;
   setApiBaseUrl: (url: string) => void;
   toggleLegalMode: () => void;
+  completeOnboarding: () => void;
 }
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
@@ -19,10 +21,13 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [LEGAL_MODE, setLegalModeState] = useState<boolean>(false);
   const [API_BASE_URL, setApiBaseUrlState] = useState<string>('http://localhost:3000/api');
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(false);
 
   // Load from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+    const onboardingComplete = localStorage.getItem('onboarding_completed');
+    
     if (stored) {
       try {
         const config = JSON.parse(stored);
@@ -32,6 +37,8 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to parse stored config:', error);
       }
     }
+    
+    setOnboardingCompleted(onboardingComplete === 'true');
   }, []);
 
   // Save to localStorage whenever settings change
@@ -78,6 +85,10 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     setLegalModeState(prev => !prev);
   };
 
+  const completeOnboarding = () => {
+    setOnboardingCompleted(true);
+  };
+
   return (
     <ConfigContext.Provider
       value={{
@@ -85,9 +96,11 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         PRODUCT_NAME,
         API_BASE_URL,
         isConnected,
+        onboardingCompleted,
         setLegalMode,
         setApiBaseUrl,
         toggleLegalMode,
+        completeOnboarding,
       }}
     >
       {children}
