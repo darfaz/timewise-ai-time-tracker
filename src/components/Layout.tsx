@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { MobileNav } from "@/components/MobileNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useConfig } from "@/contexts/ConfigContext";
 import { motion } from "framer-motion";
 
@@ -113,6 +114,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </Tooltip>
               
               <ConnectionStatus />
+              
+              <ThemeToggle />
               
               <Tooltip>
                 <TooltipTrigger asChild>
