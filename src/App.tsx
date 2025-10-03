@@ -66,10 +66,10 @@ const AppContent = () => {
   return (
     <ErrorBoundary>
       {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
-      <CommandPalette />
-      <KeyboardShortcuts />
-      <OfflineIndicator />
       <BrowserRouter>
+        <CommandPalette />
+        <KeyboardShortcuts />
+        <OfflineIndicator />
         <Layout>
           <Suspense fallback={<PageLoader />}>
             <Routes>
