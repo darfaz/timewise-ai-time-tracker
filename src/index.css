@@ -95,6 +95,95 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus visible styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Safe area insets for mobile */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@layer components {
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-hover hover:-translate-y-1;
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50;
+  }
+
+  /* Skeleton shimmer animation */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(
+      to right,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 2000px 100%;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
+  }
+
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 4px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground) / 0.5);
   }
 }
