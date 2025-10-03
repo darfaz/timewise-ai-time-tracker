@@ -78,40 +78,40 @@ const AppContent = () => {
   return (
     <ErrorBoundary>
       {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
-      <BrowserRouter>
-        <CommandPalette />
-        <KeyboardShortcuts />
-        <OfflineIndicator />
-        <Layout>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/timeline" element={<Timeline />} />
-              <Route path="/timesheet" element={<Timesheet />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/matters" element={<Matters />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/ledes-export" element={<LEDESExport />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </Layout>
-      </BrowserRouter>
+      <CommandPalette />
+      <KeyboardShortcuts />
+      <OfflineIndicator />
+      <Layout>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/timeline" element={<Timeline />} />
+            <Route path="/timesheet" element={<Timesheet />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/matters" element={<Matters />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/ledes-export" element={<LEDESExport />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </Layout>
     </ErrorBoundary>
   );
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ConfigProvider>
-      <TooltipProvider delayDuration={300}>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
-    </ConfigProvider>
+    <BrowserRouter>
+      <ConfigProvider>
+        <TooltipProvider delayDuration={300}>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
+      </ConfigProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
