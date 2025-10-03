@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiClient } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
 interface UiConfig {
   legalMode: boolean;
@@ -23,6 +24,9 @@ interface ConfigContextType {
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'timewise_config';
+const LEGAL_MODE_OVERRIDE_KEY = 'timewise_legal_mode_override';
+
+const isDevelopment = import.meta.env.DEV;
 
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [uiConfig, setUiConfig] = useState<UiConfig>({
@@ -45,8 +49,21 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         // Call API to get config
         const apiConfig = await apiClient.getConfig();
         
-        // Determine legal mode: URL param takes precedence
+        // Determine legal mode with precedence:
+        // 1. URL param (always wins for testing)
+        // 2. localStorage (dev only)
+        // 3. API config (production default)
         let legalMode = apiConfig.legal_mode || false;
+        
+        // In development, check localStorage override first
+        if (isDevelopment && !legalParam) {
+          const storedOverride = localStorage.getItem(LEGAL_MODE_OVERRIDE_KEY);
+          if (storedOverride !== null) {
+            legalMode = storedOverride === 'true';
+          }
+        }
+        
+        // URL param takes ultimate precedence
         if (legalParam === '1') {
           legalMode = true;
         } else if (legalParam === '0') {
@@ -128,6 +145,11 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
       legalMode: mode,
       productName: mode ? 'BillExact' : 'TimeWise',
     }));
+    
+    // Persist to localStorage in dev mode
+    if (isDevelopment) {
+      localStorage.setItem(LEGAL_MODE_OVERRIDE_KEY, mode.toString());
+    }
   };
 
   const setApiBaseUrl = (url: string) => {
@@ -135,16 +157,44 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleLegalMode = () => {
-    setUiConfig(prev => ({
-      ...prev,
-      legalMode: !prev.legalMode,
-      productName: !prev.legalMode ? 'BillExact' : 'TimeWise',
-    }));
+    setUiConfig(prev => {
+      const newMode = !prev.legalMode;
+      
+      // Persist to localStorage in dev mode
+      if (isDevelopment) {
+        localStorage.setItem(LEGAL_MODE_OVERRIDE_KEY, newMode.toString());
+        toast({
+          title: `${newMode ? 'Legal' : 'Standard'} Mode Enabled`,
+          description: `Switched to ${newMode ? 'BillExact' : 'TimeWise'} (Dev Override)`,
+        });
+      }
+      
+      return {
+        ...prev,
+        legalMode: newMode,
+        productName: newMode ? 'BillExact' : 'TimeWise',
+      };
+    });
   };
 
   const completeOnboarding = () => {
     setOnboardingCompleted(true);
   };
+
+  // Dev-only keyboard shortcut: Ctrl/Cmd + Alt + L
+  useEffect(() => {
+    if (!isDevelopment) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        toggleLegalMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiConfig.legalMode]);
 
   return (
     <ConfigContext.Provider
