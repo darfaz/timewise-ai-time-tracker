@@ -92,7 +92,7 @@ export const ActivityEditModal = ({
 
   // Find selected matter and check if it requires LEDES
   const selectedMatter = matters.find((m) => m.id === matter);
-  const showUtbmsFields = uiConfig.legalMode && selectedMatter?.requires_ledes === true;
+  const showUtbmsFields = uiConfig.mode === 'legal' && selectedMatter?.requires_ledes === true;
 
   const IconComponent = (LucideIcons as any)[activity.appIcon] || LucideIcons.Circle;
 
@@ -135,7 +135,7 @@ export const ActivityEditModal = ({
       }
     }
 
-    if (!uiConfig.legalMode && !category) {
+    if (uiConfig.mode !== 'legal' && !category) {
       newErrors.category = "Category is required";
     }
 
@@ -259,7 +259,7 @@ export const ActivityEditModal = ({
                   <p className="text-sm font-medium mt-1 text-foreground">{calculateEndTime()}</p>
                 </div>
 
-                {!uiConfig.legalMode && (
+                {uiConfig.mode !== 'legal' && (
                   <div>
                     <Label htmlFor="category">Category *</Label>
                     <Select value={category} onValueChange={setCategory}>
@@ -286,7 +286,7 @@ export const ActivityEditModal = ({
           {/* Right Section - Client, Matter, Narrative (always shown) */}
           <div className="space-y-4">
             <h3 className="font-semibold mb-4 text-foreground">
-              {uiConfig.legalMode ? "Legal Details" : "Project Details"}
+              {uiConfig.mode === 'legal' ? "Legal Details" : "Project Details"}
             </h3>
             
             <div>
@@ -308,11 +308,11 @@ export const ActivityEditModal = ({
 
             <div>
               <Label htmlFor="matter">
-                {uiConfig.legalMode ? "Matter *" : "Project *"}
+                {uiConfig.mode === 'legal' ? "Matter *" : "Project *"}
               </Label>
               <Select value={matter} onValueChange={setMatter}>
                 <SelectTrigger className={errors.matter ? "border-destructive" : ""}>
-                  <SelectValue placeholder={uiConfig.legalMode ? "Select matter" : "Select project"} />
+                  <SelectValue placeholder={uiConfig.mode === 'legal' ? "Select matter" : "Select project"} />
                 </SelectTrigger>
                 <SelectContent>
                   {matters.length > 0 ? (

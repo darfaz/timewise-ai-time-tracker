@@ -12,13 +12,13 @@ import { motion } from "framer-motion";
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const { uiConfig } = useConfig();
-  const { legalMode, productName } = uiConfig;
+  const { mode, productName } = uiConfig;
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Timeline", path: "/timeline", icon: Clock },
     { name: "Timesheet", path: "/timesheet", icon: FileText },
-    ...(legalMode 
+    ...(mode === 'legal'
       ? [
           { name: "Matters", path: "/matters", icon: Briefcase },
           { name: "LEDES Export", path: "/ledes-export", icon: FileSpreadsheet },
@@ -46,7 +46,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {legalMode ? (
+                  {mode === 'legal' ? (
                     <Briefcase className="h-5 w-5 text-primary-foreground" />
                   ) : (
                     <List className="h-5 w-5 text-primary-foreground" />
@@ -55,10 +55,10 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground">{productName}</span>
                   <Badge 
-                    variant={legalMode ? "default" : "secondary"} 
-                    className={legalMode ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
+                    variant={mode === 'legal' ? "default" : "secondary"} 
+                    className={mode === 'legal' ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
                   >
-                    {legalMode ? "Legal" : "Standard"}
+                    {mode === 'legal' ? "Legal" : "Standard"}
                   </Badge>
                 </div>
               </Link>

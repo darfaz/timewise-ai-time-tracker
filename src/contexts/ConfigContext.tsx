@@ -1,36 +1,41 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { apiClient } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
+type AppMode = 'legal' | 'general';
+
 interface UiConfig {
-  legalMode: boolean;
+  mode: AppMode;
   productName: string;
   loaded: boolean;
 }
 
 interface ConfigContextType {
   uiConfig: UiConfig;
+  mode: AppMode;
   LEGAL_MODE: boolean;
   PRODUCT_NAME: string;
   API_BASE_URL: string;
   isConnected: boolean;
   onboardingCompleted: boolean;
-  setLegalMode: (mode: boolean) => void;
+  setMode: (mode: AppMode) => void;
   setApiBaseUrl: (url: string) => void;
-  toggleLegalMode: () => void;
+  toggleMode: () => void;
   completeOnboarding: () => void;
 }
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'timewise_config';
-const LEGAL_MODE_OVERRIDE_KEY = 'timewise_legal_mode_override';
+const MODE_OVERRIDE_KEY = 'timewise_mode_override';
 
 const isDevelopment = import.meta.env.DEV;
 
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
   const [uiConfig, setUiConfig] = useState<UiConfig>({
-    legalMode: false,
+    mode: 'general',
     productName: 'TimeWise',
     loaded: false,
   });
@@ -38,43 +43,41 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(false);
 
-  // Fetch config from API on mount
+  // Fetch config from API on mount and route change
   useEffect(() => {
     const fetchConfig = async () => {
       try {
         // Get URL override for dev
         const urlParams = new URLSearchParams(window.location.search);
-        const legalParam = urlParams.get('legal');
+        const modeParam = urlParams.get('mode');
         
         // Call API to get config
         const apiConfig = await apiClient.getConfig();
         
-        // Determine legal mode with precedence:
+        // Determine mode with precedence:
         // 1. URL param (always wins for testing)
         // 2. localStorage (dev only)
         // 3. API config (production default)
-        let legalMode = apiConfig.legal_mode || false;
+        let mode: AppMode = apiConfig.mode === 'legal' ? 'legal' : 'general';
         
         // In development, check localStorage override first
-        if (isDevelopment && !legalParam) {
-          const storedOverride = localStorage.getItem(LEGAL_MODE_OVERRIDE_KEY);
-          if (storedOverride !== null) {
-            legalMode = storedOverride === 'true';
+        if (isDevelopment && !modeParam) {
+          const storedOverride = localStorage.getItem(MODE_OVERRIDE_KEY);
+          if (storedOverride === 'legal' || storedOverride === 'general') {
+            mode = storedOverride as AppMode;
           }
         }
         
         // URL param takes ultimate precedence
-        if (legalParam === '1') {
-          legalMode = true;
-        } else if (legalParam === '0') {
-          legalMode = false;
+        if (modeParam === 'legal' || modeParam === 'general') {
+          mode = modeParam as AppMode;
         }
         
         // Determine product name
-        const productName = apiConfig.product_name || (legalMode ? 'BillExact' : 'TimeWise');
+        const productName = apiConfig.product_name || (mode === 'legal' ? 'BillExact' : 'TimeWise');
         
         setUiConfig({
-          legalMode,
+          mode,
           productName,
           loaded: true,
         });
@@ -82,7 +85,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to fetch config:', error);
         // Set defaults on error
         setUiConfig({
-          legalMode: false,
+          mode: 'general',
           productName: 'TimeWise',
           loaded: true,
         });
@@ -90,7 +93,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchConfig();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, location.pathname]);
 
   // Load other settings from localStorage on mount
   useEffect(() => {
@@ -139,16 +142,16 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [API_BASE_URL]);
 
-  const setLegalMode = (mode: boolean) => {
+  const setMode = (mode: AppMode) => {
     setUiConfig(prev => ({
       ...prev,
-      legalMode: mode,
-      productName: mode ? 'BillExact' : 'TimeWise',
+      mode,
+      productName: mode === 'legal' ? 'BillExact' : 'TimeWise',
     }));
     
     // Persist to localStorage in dev mode
     if (isDevelopment) {
-      localStorage.setItem(LEGAL_MODE_OVERRIDE_KEY, mode.toString());
+      localStorage.setItem(MODE_OVERRIDE_KEY, mode);
     }
   };
 
@@ -156,23 +159,23 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     setApiBaseUrlState(url);
   };
 
-  const toggleLegalMode = () => {
+  const toggleMode = () => {
     setUiConfig(prev => {
-      const newMode = !prev.legalMode;
+      const newMode = prev.mode === 'legal' ? 'general' : 'legal';
       
       // Persist to localStorage in dev mode
       if (isDevelopment) {
-        localStorage.setItem(LEGAL_MODE_OVERRIDE_KEY, newMode.toString());
+        localStorage.setItem(MODE_OVERRIDE_KEY, newMode);
         toast({
-          title: `${newMode ? 'Legal' : 'Standard'} Mode Enabled`,
-          description: `Switched to ${newMode ? 'BillExact' : 'TimeWise'} (Dev Override)`,
+          title: `${newMode === 'legal' ? 'Legal' : 'General'} Mode Enabled`,
+          description: `Switched to ${newMode === 'legal' ? 'BillExact' : 'TimeWise'} (Dev Override)`,
         });
       }
       
       return {
         ...prev,
-        legalMode: newMode,
-        productName: newMode ? 'BillExact' : 'TimeWise',
+        mode: newMode,
+        productName: newMode === 'legal' ? 'BillExact' : 'TimeWise',
       };
     });
   };
@@ -181,33 +184,34 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     setOnboardingCompleted(true);
   };
 
-  // Dev-only keyboard shortcut: Ctrl/Cmd + Alt + L
+  // Dev-only keyboard shortcut: Ctrl/Cmd + Alt + M
   useEffect(() => {
     if (!isDevelopment) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'l') {
+      if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'm') {
         e.preventDefault();
-        toggleLegalMode();
+        toggleMode();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [uiConfig.legalMode]);
+  }, [uiConfig.mode]);
 
   return (
     <ConfigContext.Provider
       value={{
         uiConfig,
-        LEGAL_MODE: uiConfig.legalMode,
+        mode: uiConfig.mode,
+        LEGAL_MODE: uiConfig.mode === 'legal',
         PRODUCT_NAME: uiConfig.productName,
         API_BASE_URL,
         isConnected,
         onboardingCompleted,
-        setLegalMode,
+        setMode,
         setApiBaseUrl,
-        toggleLegalMode,
+        toggleMode,
         completeOnboarding,
       }}
     >

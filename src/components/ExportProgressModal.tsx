@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BillingEntry } from "@/lib/billingData";
 import { format as formatDate } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { useUiConfig } from "@/contexts/ConfigContext";
+import { useConfig } from "@/contexts/ConfigContext";
 
 interface ExportProgressModalProps {
   isOpen: boolean;
@@ -33,7 +33,7 @@ export const ExportProgressModal = ({
   endDate,
   hasLedesRequired = false,
 }: ExportProgressModalProps) => {
-  const uiConfig = useUiConfig();
+  const { mode } = useConfig();
   const [format, setFormat] = useState<"LEDES" | "CSV">("CSV");
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -41,7 +41,7 @@ export const ExportProgressModal = ({
   const { toast } = useToast();
 
   // Show format selector only if legal mode AND any entries require LEDES
-  const showFormatSelector = uiConfig.legalMode && hasLedesRequired;
+  const showFormatSelector = mode === 'legal' && hasLedesRequired;
 
   useEffect(() => {
     if (isOpen) {

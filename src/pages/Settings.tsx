@@ -34,8 +34,8 @@ import { apiClient } from "@/lib/api";
 import { useTheme } from "next-themes";
 
 const Settings = () => {
-  const { LEGAL_MODE, API_BASE_URL, setLegalMode, setApiBaseUrl, isConnected } = useConfig();
-  const [localLegalMode, setLocalLegalMode] = useState(LEGAL_MODE);
+  const { mode, LEGAL_MODE, API_BASE_URL, setMode, setApiBaseUrl, isConnected } = useConfig();
+  const [localMode, setLocalMode] = useState<'legal' | 'general'>(mode);
   const [localApiUrl, setLocalApiUrl] = useState(API_BASE_URL);
   const [trackDesktop, setTrackDesktop] = useState(true);
   const [trackBrowser, setTrackBrowser] = useState(true);
@@ -53,12 +53,12 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
-    setLocalLegalMode(LEGAL_MODE);
+    setLocalMode(mode);
     setLocalApiUrl(API_BASE_URL);
-  }, [LEGAL_MODE, API_BASE_URL]);
+  }, [mode, API_BASE_URL]);
 
   const handleSave = () => {
-    setLegalMode(localLegalMode);
+    setMode(localMode);
     setApiBaseUrl(localApiUrl);
     
     // Save other settings to localStorage
@@ -124,7 +124,7 @@ const Settings = () => {
   };
 
   const handleResetToDefaults = () => {
-    setLocalLegalMode(false);
+    setLocalMode('general');
     setLocalApiUrl("http://localhost:3000/api");
     setTrackDesktop(true);
     setTrackBrowser(true);
@@ -154,7 +154,7 @@ const Settings = () => {
     }
   };
 
-  const hasChanges = localLegalMode !== LEGAL_MODE || localApiUrl !== API_BASE_URL;
+  const hasChanges = localMode !== mode || localApiUrl !== API_BASE_URL;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -189,20 +189,20 @@ const Settings = () => {
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <Label htmlFor="legal-mode">Legal Billing Mode</Label>
-                    <Badge variant={localLegalMode ? "default" : "secondary"} className={localLegalMode ? "bg-purple-500" : "bg-blue-500"}>
-                      {localLegalMode ? <><Briefcase className="mr-1 h-3 w-3" />BillExact</> : <><Clock className="mr-1 h-3 w-3" />TimeWise</>}
+                    <Badge variant={localMode === 'legal' ? "default" : "secondary"} className={localMode === 'legal' ? "bg-purple-500" : "bg-blue-500"}>
+                      {localMode === 'legal' ? <><Briefcase className="mr-1 h-3 w-3" />BillExact</> : <><Clock className="mr-1 h-3 w-3" />TimeWise</>}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {localLegalMode 
+                    {localMode === 'legal'
                       ? "Enable advanced legal billing features and client matter tracking" 
                       : "General time tracking for productivity and project management"}
                   </p>
                 </div>
                 <Switch 
                   id="legal-mode"
-                  checked={localLegalMode} 
-                  onCheckedChange={setLocalLegalMode} 
+                  checked={localMode === 'legal'} 
+                  onCheckedChange={(checked) => setLocalMode(checked ? 'legal' : 'general')} 
                 />
               </div>
             </CardContent>
@@ -597,9 +597,9 @@ const Settings = () => {
       <div className="flex justify-end gap-3 sticky bottom-6 bg-background/95 backdrop-blur p-4 rounded-lg border shadow-lg">
         <Button 
           onClick={() => {
-            setLocalLegalMode(LEGAL_MODE);
+            setLocalMode(mode);
             setLocalApiUrl(API_BASE_URL);
-          }} 
+          }}
           variant="outline" 
           size="lg"
           disabled={!hasChanges}

@@ -40,19 +40,19 @@ const Dashboard = () => {
     id: activity.id,
     time: format(activity.timestamp, "h:mm a"),
     source: ["Mail", "Calendar", "Web", "Note"][index % 4] as "Mail" | "Calendar" | "Web" | "Note",
-    client: uiConfig.legalMode 
+    client: uiConfig.mode === 'legal'
       ? (clients[index % clients.length]?.name || "Client " + (index + 1))
       : "N/A",
-    matter: uiConfig.legalMode
+    matter: uiConfig.mode === 'legal'
       ? (matters[index % matters.length]?.name || "Matter " + (index + 1))
       : (projects[index % projects.length]?.name || "Project " + (index + 1)),
     narrative: activity.windowTitle || "AI-generated narrative describing the work performed...",
     hours: (activity.duration / 60).toFixed(2),
     status: index % 3 === 0 ? "pending" : "approved" as "pending" | "approved",
     // Legal mode specific fields
-    complianceStatus: uiConfig.legalMode ? (index % 5 === 0 ? "warning" : index % 7 === 0 ? "error" : "ok") as "ok" | "warning" | "error" : "ok",
-    requiresLedes: uiConfig.legalMode && index % 4 === 0,
-    utbmsCode: uiConfig.legalMode && index % 4 === 0 ? "L210" : undefined,
+    complianceStatus: uiConfig.mode === 'legal' ? (index % 5 === 0 ? "warning" : index % 7 === 0 ? "error" : "ok") as "ok" | "warning" | "error" : "ok",
+    requiresLedes: uiConfig.mode === 'legal' && index % 4 === 0,
+    utbmsCode: uiConfig.mode === 'legal' && index % 4 === 0 ? "L210" : undefined,
   }));
 
   // Filter entries
@@ -272,7 +272,7 @@ const Dashboard = () => {
                     {/* Main Text */}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {uiConfig.legalMode ? (
+                        {uiConfig.mode === 'legal' ? (
                           <>
                             <span className="font-bold text-foreground">{entry.client}</span>
                             <span className="text-muted-foreground">•</span>
@@ -287,20 +287,20 @@ const Dashboard = () => {
                           </Badge>
                         )}
                         {/* Legal mode: Compliance badges */}
-                        {uiConfig.legalMode && entry.complianceStatus === "warning" && (
+                        {uiConfig.mode === 'legal' && entry.complianceStatus === "warning" && (
                           <Badge variant="outline" className="ml-2 border-yellow-500 text-yellow-600">
                             <AlertTriangle className="mr-1 h-3 w-3" />
                             Compliance Warning
                           </Badge>
                         )}
-                        {uiConfig.legalMode && entry.complianceStatus === "error" && (
+                        {uiConfig.mode === 'legal' && entry.complianceStatus === "error" && (
                           <Badge variant="outline" className="ml-2 border-red-500 text-red-600">
                             <AlertCircle className="mr-1 h-3 w-3" />
                             Needs Review
                           </Badge>
                         )}
                         {/* Legal mode: UTBMS/LEDES indicators */}
-                        {uiConfig.legalMode && entry.requiresLedes && entry.utbmsCode && (
+                        {uiConfig.mode === 'legal' && entry.requiresLedes && entry.utbmsCode && (
                           <Badge variant="secondary" className="ml-2">
                             {entry.utbmsCode}
                           </Badge>
