@@ -3,6 +3,12 @@ import * as LucideIcons from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useConfig } from "@/contexts/ConfigContext";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 interface EnhancedActivityItemProps {
   activity: Activity;
@@ -34,6 +40,7 @@ export const EnhancedActivityItem = ({
   const timeRange = `${format(startTime, "h:mm a")} - ${format(endTime, "h:mm a")}`;
 
   const isBillable = project?.billableRate && project.billableRate > 0;
+  const hasIssues = activity.issues && activity.issues.length > 0;
 
   return (
     <div className="flex gap-4 group">
@@ -74,6 +81,32 @@ export const EnhancedActivityItem = ({
                 )}
               </div>
               <p className="text-sm text-muted-foreground">{activity.windowTitle}</p>
+            </div>
+            <div className="ml-2">
+              {hasIssues ? (
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <button className="text-destructive hover:text-destructive/80 transition-colors">
+                      <AlertCircle className="h-5 w-5" />
+                    </button>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold text-foreground">Issues Detected</h4>
+                      <ul className="space-y-1">
+                        {activity.issues?.map((issue, idx) => (
+                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-destructive mt-0.5">•</span>
+                            <span>{issue}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              ) : (
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              )}
             </div>
           </div>
 

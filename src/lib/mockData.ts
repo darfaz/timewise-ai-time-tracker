@@ -6,6 +6,7 @@ export interface Activity {
   duration: number; // in minutes
   timestamp: Date;
   projectId?: string;
+  issues?: string[];
 }
 
 export interface Project {
@@ -76,6 +77,7 @@ export const mockActivities: Activity[] = [
     duration: 45,
     timestamp: new Date(Date.now() - 30 * 60000),
     projectId: "1",
+    issues: [],
   },
   {
     id: "2",
@@ -85,6 +87,7 @@ export const mockActivities: Activity[] = [
     duration: 15,
     timestamp: new Date(Date.now() - 75 * 60000),
     projectId: "1",
+    issues: ["Vague narrative", "Exceeds max block time"],
   },
   {
     id: "3",
@@ -94,6 +97,7 @@ export const mockActivities: Activity[] = [
     duration: 62,
     timestamp: new Date(Date.now() - 137 * 60000),
     projectId: "2",
+    issues: [],
   },
   {
     id: "4",
@@ -103,6 +107,7 @@ export const mockActivities: Activity[] = [
     duration: 12,
     timestamp: new Date(Date.now() - 199 * 60000),
     projectId: "2",
+    issues: ["Missing client code"],
   },
   {
     id: "5",
@@ -112,6 +117,7 @@ export const mockActivities: Activity[] = [
     duration: 8,
     timestamp: new Date(Date.now() - 211 * 60000),
     projectId: "3",
+    issues: [],
   },
 ];
 
