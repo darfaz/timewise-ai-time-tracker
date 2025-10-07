@@ -48,7 +48,8 @@ const PageLoader = () => (
 );
 
 const AppContent = () => {
-  const { uiConfig, onboardingCompleted, completeOnboarding } = useConfig();
+  const config = useConfig();
+  const { uiConfig, onboardingCompleted, completeOnboarding } = config;
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
