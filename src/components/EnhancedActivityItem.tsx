@@ -99,7 +99,9 @@ export const EnhancedActivityItem = ({
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">{activity.windowTitle}</p>
+              <p className="text-sm text-muted-foreground">
+                {activity.narrativePreview || activity.windowTitle}
+              </p>
             </div>
             <div className="ml-2">
               {hasIssues ? (

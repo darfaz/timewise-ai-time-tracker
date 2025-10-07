@@ -39,7 +39,10 @@ export const apiClient = {
     });
 
     if (error) throw error;
-    return data.narrative;
+    return {
+      narrative: data.narrative,
+      preview: data.preview
+    };
   },
 
   async rewriteEntryNarrative(entryId: string) {
@@ -54,7 +57,10 @@ export const apiClient = {
     });
 
     if (error) throw error;
-    return data;
+    return {
+      narrative: data.narrative,
+      preview: data.preview
+    };
   },
 
   async rewriteDayNarratives(date: string) {

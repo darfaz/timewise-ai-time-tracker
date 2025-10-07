@@ -7,6 +7,8 @@ export interface Activity {
   timestamp: Date;
   projectId?: string;
   issues?: string[];
+  narrative?: string;
+  narrativePreview?: string;
 }
 
 export interface Project {

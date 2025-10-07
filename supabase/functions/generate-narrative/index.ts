@@ -6,6 +6,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function sanitizeNarrative(text: string): string {
+  // Strip noisy titles
+  const noisyPatterns = [
+    /New Tab/gi,
+    /Sign In/gi,
+    /Sign Up/gi,
+    /Log In/gi,
+    /Login/gi,
+    /localhost(:\d+)?/gi,
+    /127\.0\.0\.1(:\d+)?/gi,
+    /\b(http|https):\/\/localhost/gi,
+    /\b(http|https):\/\/127\.0\.0\.1/gi,
+  ];
+
+  let sanitized = text;
+  noisyPatterns.forEach(pattern => {
+    sanitized = sanitized.replace(pattern, '');
+  });
+
+  // Collapse multiple whitespaces into single space
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
+
+  return sanitized;
+}
+
+function truncatePreview(text: string, maxWords: number = 18): string {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(' ') + '...';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -48,10 +79,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const narrative = data.choices[0].message.content.trim();
+    const rawNarrative = data.choices[0].message.content.trim();
+    
+    // Sanitize the narrative
+    const fullNarrative = sanitizeNarrative(rawNarrative);
+    const previewNarrative = truncatePreview(fullNarrative, 18);
 
     return new Response(
-      JSON.stringify({ narrative }),
+      JSON.stringify({ 
+        narrative: fullNarrative,
+        preview: previewNarrative
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
