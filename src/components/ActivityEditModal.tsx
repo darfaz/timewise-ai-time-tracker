@@ -71,6 +71,10 @@ export const ActivityEditModal = ({
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Find selected matter and check if it requires LEDES
+  const selectedMatter = matters.find((m) => m.id === matter);
+  const showUtbmsFields = uiConfig.mode === 'legal' && selectedMatter?.requires_ledes === true;
+
   useEffect(() => {
     if (activity) {
       setClient("");
@@ -88,11 +92,15 @@ export const ActivityEditModal = ({
     }
   }, [activity, project]);
 
-  if (!activity) return null;
+  // Clear UTBMS codes when switching to a matter that doesn't require LEDES
+  useEffect(() => {
+    if (!showUtbmsFields) {
+      setTaskCode("");
+      setActivityCode("");
+    }
+  }, [showUtbmsFields]);
 
-  // Find selected matter and check if it requires LEDES
-  const selectedMatter = matters.find((m) => m.id === matter);
-  const showUtbmsFields = uiConfig.mode === 'legal' && selectedMatter?.requires_ledes === true;
+  if (!activity) return null;
 
   const IconComponent = (LucideIcons as any)[activity.appIcon] || LucideIcons.Circle;
 
