@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Activity, Project } from "@/lib/mockData";
 import * as LucideIcons from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,9 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EntryExplainDrawer } from "@/components/EntryExplainDrawer";
 
 interface EnhancedActivityItemProps {
   activity: Activity;
@@ -25,6 +28,7 @@ export const EnhancedActivityItem = ({
 }: EnhancedActivityItemProps) => {
   const { LEGAL_MODE } = useConfig();
   const IconComponent = (LucideIcons as any)[activity.appIcon] || LucideIcons.Circle;
+  const [explainDrawerOpen, setExplainDrawerOpen] = useState(false);
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -115,12 +119,31 @@ export const EnhancedActivityItem = ({
               <LucideIcons.Clock className="h-3 w-3" />
               {timeRange}
             </span>
-            <span className="font-medium text-primary">
-              {formatDuration(activity.duration)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-primary">
+                {formatDuration(activity.duration)}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-muted"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExplainDrawerOpen(true);
+                }}
+              >
+                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      <EntryExplainDrawer
+        entryId={activity.id}
+        isOpen={explainDrawerOpen}
+        onClose={() => setExplainDrawerOpen(false)}
+      />
     </div>
   );
 };

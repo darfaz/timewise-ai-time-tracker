@@ -84,4 +84,32 @@ export const apiClient = {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return { connected: true, message: "Connected successfully" };
   },
+
+  async get(url: string) {
+    // Mock API implementation
+    if (url.includes('/entry/') && url.includes('/explain')) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      // Mock response with sample data
+      return {
+        data: {
+          calendar: [
+            { subject: "Team standup - Sprint planning", time: "9:00 AM - 9:30 AM" },
+            { subject: "Client review meeting", time: "2:00 PM - 3:00 PM" },
+          ],
+          emails: [
+            { subject: "RE: Project timeline update", sender: "john.doe@example.com" },
+            { subject: "Design feedback - Dashboard mockups", sender: "jane.smith@example.com" },
+          ],
+          activities: [
+            { title: "React Documentation - useEffect Hook", host: "react.dev", duration: 15 },
+            { title: "Stack Overflow - TypeScript generics", host: "stackoverflow.com", duration: 8 },
+          ],
+          totalDuration: 45,
+        }
+      };
+    }
+    
+    throw new Error('Endpoint not implemented');
+  },
 };
