@@ -14,10 +14,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
   const uiConfig = useUiConfig();
+  const { tier } = uiConfig;
   const { data: activities = [], isLoading: activitiesLoading } = useActivities();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: matters = [] } = useMatters();
   const { data: clients = [] } = useClients();
+
+  // Feature flags based on tier
+  const showUTBMS = tier === 'LEGAL_BASIC' || tier === 'INS_DEF';
+  const showLEDES = tier === 'LEGAL_BASIC' || tier === 'INS_DEF';
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [filterView, setFilterView] = useState<"all" | "pending">("all");
@@ -51,8 +56,8 @@ const Dashboard = () => {
     status: index % 3 === 0 ? "pending" : "approved" as "pending" | "approved",
     // Legal mode specific fields
     complianceStatus: uiConfig.mode === 'legal' ? (index % 5 === 0 ? "warning" : index % 7 === 0 ? "error" : "ok") as "ok" | "warning" | "error" : "ok",
-    requiresLedes: uiConfig.mode === 'legal' && index % 4 === 0,
-    utbmsCode: uiConfig.mode === 'legal' && index % 4 === 0 ? "L210" : undefined,
+    requiresLedes: showLEDES && index % 4 === 0,
+    utbmsCode: showUTBMS && index % 4 === 0 ? "L210" : undefined,
   }));
 
   // Filter entries
@@ -300,7 +305,7 @@ const Dashboard = () => {
                           </Badge>
                         )}
                         {/* Legal mode: UTBMS/LEDES indicators */}
-                        {uiConfig.mode === 'legal' && entry.requiresLedes && entry.utbmsCode && (
+                        {showUTBMS && entry.requiresLedes && entry.utbmsCode && (
                           <Badge variant="secondary" className="ml-2">
                             {entry.utbmsCode}
                           </Badge>

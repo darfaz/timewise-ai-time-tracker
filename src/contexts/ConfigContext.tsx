@@ -4,9 +4,11 @@ import { apiClient } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
 type AppMode = 'legal' | 'general';
+type AppTier = 'FREEMIUM' | 'LEGAL_BASIC' | 'INS_DEF';
 
 interface UiConfig {
   mode: AppMode;
+  tier: AppTier;
   productName: string;
   loaded: boolean;
 }
@@ -14,12 +16,14 @@ interface UiConfig {
 interface ConfigContextType {
   uiConfig: UiConfig;
   mode: AppMode;
+  tier: AppTier;
   LEGAL_MODE: boolean;
   PRODUCT_NAME: string;
   API_BASE_URL: string;
   isConnected: boolean;
   onboardingCompleted: boolean;
   setMode: (mode: AppMode) => void;
+  setTier: (tier: AppTier) => void;
   setApiBaseUrl: (url: string) => void;
   toggleMode: () => void;
   completeOnboarding: () => void;
@@ -36,6 +40,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const [uiConfig, setUiConfig] = useState<UiConfig>({
     mode: 'general',
+    tier: 'FREEMIUM',
     productName: 'TimeWise',
     loaded: false,
   });
@@ -54,30 +59,40 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         // Call API to get config
         const apiConfig = await apiClient.getConfig();
         
-        // Determine mode with precedence:
+        // Determine tier and mode with precedence:
         // 1. URL param (always wins for testing)
         // 2. localStorage (dev only)
         // 3. API config (production default)
-        let mode: AppMode = apiConfig.mode === 'legal' ? 'legal' : 'general';
+        let tier: AppTier = apiConfig.tier || 'FREEMIUM';
+        let mode: AppMode = tier === 'FREEMIUM' ? 'general' : 'legal';
         
         // In development, check localStorage override first
         if (isDevelopment && !modeParam) {
           const storedOverride = localStorage.getItem(MODE_OVERRIDE_KEY);
           if (storedOverride === 'legal' || storedOverride === 'general') {
             mode = storedOverride as AppMode;
+            // Update tier based on mode for dev override
+            tier = mode === 'legal' ? 'LEGAL_BASIC' : 'FREEMIUM';
           }
         }
         
         // URL param takes ultimate precedence
         if (modeParam === 'legal' || modeParam === 'general') {
           mode = modeParam as AppMode;
+          tier = mode === 'legal' ? 'LEGAL_BASIC' : 'FREEMIUM';
         }
         
-        // Determine product name
-        const productName = apiConfig.product_name || (mode === 'legal' ? 'BillExact' : 'TimeWise');
+        // Determine product name based on tier
+        let productName = apiConfig.product_name;
+        if (!productName) {
+          if (tier === 'FREEMIUM') productName = 'TimeWise';
+          else if (tier === 'LEGAL_BASIC') productName = 'BillExact';
+          else if (tier === 'INS_DEF') productName = 'BillExact Defense';
+        }
         
         setUiConfig({
           mode,
+          tier,
           productName,
           loaded: true,
         });
@@ -86,6 +101,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
         // Set defaults on error
         setUiConfig({
           mode: 'general',
+          tier: 'FREEMIUM',
           productName: 'TimeWise',
           loaded: true,
         });
@@ -143,9 +159,11 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   }, [API_BASE_URL]);
 
   const setMode = (mode: AppMode) => {
+    const tier = mode === 'legal' ? 'LEGAL_BASIC' : 'FREEMIUM';
     setUiConfig(prev => ({
       ...prev,
       mode,
+      tier,
       productName: mode === 'legal' ? 'BillExact' : 'TimeWise',
     }));
     
@@ -155,6 +173,20 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const setTier = (tier: AppTier) => {
+    const mode = tier === 'FREEMIUM' ? 'general' : 'legal';
+    let productName = 'TimeWise';
+    if (tier === 'LEGAL_BASIC') productName = 'BillExact';
+    else if (tier === 'INS_DEF') productName = 'BillExact Defense';
+    
+    setUiConfig(prev => ({
+      ...prev,
+      mode,
+      tier,
+      productName,
+    }));
+  };
+
   const setApiBaseUrl = (url: string) => {
     setApiBaseUrlState(url);
   };
@@ -162,6 +194,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const toggleMode = () => {
     setUiConfig(prev => {
       const newMode = prev.mode === 'legal' ? 'general' : 'legal';
+      const newTier = newMode === 'legal' ? 'LEGAL_BASIC' : 'FREEMIUM';
       
       // Persist to localStorage in dev mode
       if (isDevelopment) {
@@ -175,6 +208,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
       return {
         ...prev,
         mode: newMode,
+        tier: newTier,
         productName: newMode === 'legal' ? 'BillExact' : 'TimeWise',
       };
     });
@@ -204,12 +238,14 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
       value={{
         uiConfig,
         mode: uiConfig.mode,
+        tier: uiConfig.tier,
         LEGAL_MODE: uiConfig.mode === 'legal',
         PRODUCT_NAME: uiConfig.productName,
         API_BASE_URL,
         isConnected,
         onboardingCompleted,
         setMode,
+        setTier,
         setApiBaseUrl,
         toggleMode,
         completeOnboarding,

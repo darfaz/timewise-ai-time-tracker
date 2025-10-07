@@ -12,7 +12,17 @@ import { motion } from "framer-motion";
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const { uiConfig } = useConfig();
-  const { mode, productName } = uiConfig;
+  const { mode, tier, productName } = uiConfig;
+
+  // Determine badge text and color based on tier
+  const getTierBadge = () => {
+    if (tier === 'FREEMIUM') return { text: 'General', variant: 'secondary' as const };
+    if (tier === 'LEGAL_BASIC') return { text: 'Legal', variant: 'default' as const };
+    if (tier === 'INS_DEF') return { text: 'Ins-Defense', variant: 'default' as const };
+    return { text: 'General', variant: 'secondary' as const };
+  };
+
+  const tierBadge = getTierBadge();
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -55,10 +65,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground">{productName}</span>
                   <Badge 
-                    variant={mode === 'legal' ? "default" : "secondary"} 
-                    className={mode === 'legal' ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
+                    variant={tierBadge.variant}
+                    className={cn(
+                      tier === 'FREEMIUM' && "bg-blue-500 hover:bg-blue-600",
+                      tier === 'LEGAL_BASIC' && "bg-purple-500 hover:bg-purple-600",
+                      tier === 'INS_DEF' && "bg-amber-500 hover:bg-amber-600"
+                    )}
                   >
-                    {mode === 'legal' ? "Legal" : "Standard"}
+                    {tierBadge.text}
                   </Badge>
                 </div>
               </Link>

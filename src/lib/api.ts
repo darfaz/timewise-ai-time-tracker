@@ -104,8 +104,11 @@ class ApiClient {
       const { data } = await this.client.get('/config');
       return data;
     } catch (error) {
-      // Return defaults if API not available
-      return { legal_mode: false, product_name: null };
+      // Return defaults if API not available - simulate tier-based config
+      return { 
+        tier: 'LEGAL_BASIC', // Change this to test: FREEMIUM | LEGAL_BASIC | INS_DEF
+        product_name: null 
+      };
     }
   }
 
