@@ -1,5 +1,6 @@
 import { mockActivities, mockProjects, mockTimeEntries } from "./mockData";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 let apiBaseUrl = "http://localhost:3000/api";
 
@@ -79,6 +80,35 @@ export const apiClient = {
   async approveEntry(entryId: string) {
     await new Promise((resolve) => setTimeout(resolve, 300));
     return { success: true, id: entryId, approved: true };
+  },
+
+  async exportCsv(params: { 
+    startDate: string; 
+    endDate: string; 
+    rounding: number; 
+    minIncrement: number; 
+    rateOverride?: number;
+  }) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    // Mock CSV generation
+    const csvHeader = "Date,Project,Matter,Description,Duration (hours),Rate,Amount,Approved\n";
+    const csvRows = mockActivities
+      .filter(a => a.approved)
+      .map(a => {
+        const project = mockProjects.find(p => p.id === a.projectId);
+        const hours = (a.duration / 60).toFixed(2);
+        const rate = params.rateOverride || project?.billableRate || 0;
+        const amount = (parseFloat(hours) * rate).toFixed(2);
+        
+        return `${format(a.timestamp, 'yyyy-MM-dd')},${project?.name || 'N/A'},N/A,${a.windowTitle},${hours},${rate},${amount},Yes`;
+      })
+      .join("\n");
+    
+    return { 
+      success: true, 
+      csv: csvHeader + csvRows 
+    };
   },
 
   async approveDay(date: string) {

@@ -5,9 +5,10 @@ import { ActivityEditModal } from "@/components/ActivityEditModal";
 import { TimelineStats } from "@/components/TimelineStats";
 import { TimelineFilters } from "@/components/TimelineFilters";
 import { EmptyTimeline } from "@/components/EmptyTimeline";
+import { ExportModal } from "@/components/ExportModal";
 import { mockActivities, mockProjects, Activity } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle } from "lucide-react";
+import { RefreshCw, CheckCircle, FileDown } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ const Timeline = () => {
   const [appFilter, setAppFilter] = useState("all");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Using mock data for development
@@ -90,6 +92,13 @@ const Timeline = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => rewriteDayMutation.mutate(new Date().toISOString())}
             disabled={rewriteDayMutation.isPending}
           >
@@ -144,6 +153,11 @@ const Timeline = () => {
         onSave={handleSave}
         onNext={handleNext}
         onDelete={handleDelete}
+      />
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
       />
     </div>
   );
