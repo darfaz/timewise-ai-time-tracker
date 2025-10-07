@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CheckCircle, Download, Search, Mail, Calenda
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ExportModal } from "@/components/ExportModal";
 import { useActivities } from "@/hooks/useApi";
 import { useProjects } from "@/hooks/useProjects";
 import { useMatters, useClients } from "@/hooks/useApi";
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [filterView, setFilterView] = useState<"all" | "pending">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Wait for config to load
   if (!uiConfig.loaded) {
@@ -114,7 +116,7 @@ const Dashboard = () => {
               <CheckCircle className="mr-2 h-4 w-4" />
               Mark as Complete
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsExportModalOpen(true)}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -325,6 +327,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
     </div>
   );
 };
