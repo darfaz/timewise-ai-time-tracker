@@ -7,7 +7,7 @@ import { TimelineFilters } from "@/components/TimelineFilters";
 import { EmptyTimeline } from "@/components/EmptyTimeline";
 import { mockActivities, mockProjects, Activity } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, CheckCircle } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -32,6 +32,17 @@ const Timeline = () => {
     },
     onError: () => {
       toast.error("Failed to rewrite day narratives");
+    },
+  });
+
+  const approveDayMutation = useMutation({
+    mutationFn: (date: string) => apiClient.approveDay(date),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      toast.success(data.message || "Day completed");
+    },
+    onError: () => {
+      toast.error("Failed to complete day");
     },
   });
 
@@ -76,14 +87,24 @@ const Timeline = () => {
             Your time tracking timeline for today
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => rewriteDayMutation.mutate(new Date().toISOString())}
-          disabled={rewriteDayMutation.isPending}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${rewriteDayMutation.isPending ? 'animate-spin' : ''}`} />
-          Rewrite Day
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => rewriteDayMutation.mutate(new Date().toISOString())}
+            disabled={rewriteDayMutation.isPending}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${rewriteDayMutation.isPending ? 'animate-spin' : ''}`} />
+            Rewrite Day
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => approveDayMutation.mutate(new Date().toISOString())}
+            disabled={approveDayMutation.isPending}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Mark as Complete
+          </Button>
+        </div>
       </div>
 
       <TimelineStats activities={activities} projects={projects} />

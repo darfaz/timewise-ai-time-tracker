@@ -9,7 +9,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { CheckCircle2, AlertCircle, HelpCircle, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertCircle, HelpCircle, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntryExplainDrawer } from "@/components/EntryExplainDrawer";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,6 +45,17 @@ export const EnhancedActivityItem = ({
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: (entryId: string) => apiClient.approveEntry(entryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      toast.success("Entry approved");
+    },
+    onError: () => {
+      toast.error("Failed to approve entry");
+    },
+  });
+
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -74,7 +85,9 @@ export const EnhancedActivityItem = ({
       
       <div className="flex-1 pb-6">
         <div 
-          className="rounded-lg bg-card p-5 shadow-card hover:shadow-hover transition-all duration-200 border border-border cursor-pointer"
+          className={`rounded-lg bg-card p-5 shadow-card hover:shadow-hover transition-all duration-200 border cursor-pointer ${
+            activity.approved ? 'border-green-500/50 bg-green-500/5' : 'border-border'
+          }`}
           onClick={onClick}
         >
           <div className="flex items-start justify-between mb-3">
@@ -162,6 +175,19 @@ export const EnhancedActivityItem = ({
                 }}
               >
                 <RefreshCw className={`h-4 w-4 text-muted-foreground ${rewriteMutation.isPending ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button
+                variant={activity.approved ? "default" : "ghost"}
+                size="sm"
+                className="h-6 px-2 text-xs"
+                disabled={approveMutation.isPending || hasIssues}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  approveMutation.mutate(activity.id);
+                }}
+              >
+                <Check className="h-3 w-3 mr-1" />
+                {activity.approved ? "Approved" : "Approve"}
               </Button>
             </div>
           </div>

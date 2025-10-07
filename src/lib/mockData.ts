@@ -9,6 +9,7 @@ export interface Activity {
   issues?: string[];
   narrative?: string;
   narrativePreview?: string;
+  approved?: boolean;
 }
 
 export interface Project {

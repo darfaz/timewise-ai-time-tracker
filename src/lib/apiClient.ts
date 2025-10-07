@@ -76,6 +76,25 @@ export const apiClient = {
     };
   },
 
+  async approveEntry(entryId: string) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return { success: true, id: entryId, approved: true };
+  },
+
+  async approveDay(date: string) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const entriesForDay = mockActivities.filter(a => 
+      new Date(a.timestamp).toDateString() === new Date(date).toDateString() &&
+      (!a.issues || a.issues.length === 0)
+    );
+    
+    return { 
+      success: true, 
+      count: entriesForDay.length,
+      message: `Day completed - ${entriesForDay.length} entries approved` 
+    };
+  },
+
   async getSmartSuggestions() {
     const untaggedActivities = mockActivities.filter(a => !a.projectId).slice(0, 5);
     
