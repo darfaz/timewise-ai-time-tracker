@@ -36,6 +36,22 @@ const MODE_OVERRIDE_KEY = 'timewise_mode_override';
 
 const isDevelopment = import.meta.env.DEV;
 
+const DEFAULT_CONTEXT: ConfigContextType = {
+  uiConfig: { mode: 'general', tier: 'FREEMIUM', productName: 'TimeWise', loaded: false },
+  mode: 'general',
+  tier: 'FREEMIUM',
+  LEGAL_MODE: false,
+  PRODUCT_NAME: 'TimeWise',
+  API_BASE_URL: 'http://localhost:3000/api',
+  isConnected: false,
+  onboardingCompleted: false,
+  setMode: () => {},
+  setTier: () => {},
+  setApiBaseUrl: () => {},
+  toggleMode: () => {},
+  completeOnboarding: () => {},
+};
+
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const [uiConfig, setUiConfig] = useState<UiConfig>({
@@ -259,7 +275,10 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
 export const useConfig = () => {
   const context = useContext(ConfigContext);
   if (!context) {
-    throw new Error('useConfig must be used within a ConfigProvider');
+    if (isDevelopment) {
+      console.warn('useConfig accessed outside ConfigProvider; returning default context');
+    }
+    return DEFAULT_CONTEXT;
   }
   return context;
 };
