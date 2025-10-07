@@ -6,6 +6,11 @@ import { TimelineStats } from "@/components/TimelineStats";
 import { TimelineFilters } from "@/components/TimelineFilters";
 import { EmptyTimeline } from "@/components/EmptyTimeline";
 import { mockActivities, mockProjects, Activity } from "@/lib/mockData";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
+import { toast } from "sonner";
 
 const Timeline = () => {
   const [dateFilter, setDateFilter] = useState("today");
@@ -13,10 +18,22 @@ const Timeline = () => {
   const [appFilter, setAppFilter] = useState("all");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   // Using mock data for development
   const activities = mockActivities;
   const projects = mockProjects;
+
+  const rewriteDayMutation = useMutation({
+    mutationFn: (date: string) => apiClient.rewriteDayNarratives(date),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      toast.success(data.message || "Day narratives rewritten successfully");
+    },
+    onError: () => {
+      toast.error("Failed to rewrite day narratives");
+    },
+  });
 
   // Sort activities by timestamp (most recent first)
   const sortedActivities = [...activities].sort(
@@ -52,11 +69,21 @@ const Timeline = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Activity Timeline</h1>
-        <p className="mt-1 text-muted-foreground">
-          Your time tracking timeline for today
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Activity Timeline</h1>
+          <p className="mt-1 text-muted-foreground">
+            Your time tracking timeline for today
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => rewriteDayMutation.mutate(new Date().toISOString())}
+          disabled={rewriteDayMutation.isPending}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${rewriteDayMutation.isPending ? 'animate-spin' : ''}`} />
+          Rewrite Day
+        </Button>
       </div>
 
       <TimelineStats activities={activities} projects={projects} />

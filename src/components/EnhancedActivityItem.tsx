@@ -9,9 +9,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, HelpCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntryExplainDrawer } from "@/components/EntryExplainDrawer";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
+import { toast } from "sonner";
 
 interface EnhancedActivityItemProps {
   activity: Activity;
@@ -29,6 +32,18 @@ export const EnhancedActivityItem = ({
   const { LEGAL_MODE } = useConfig();
   const IconComponent = (LucideIcons as any)[activity.appIcon] || LucideIcons.Circle;
   const [explainDrawerOpen, setExplainDrawerOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const rewriteMutation = useMutation({
+    mutationFn: (entryId: string) => apiClient.rewriteEntryNarrative(entryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      toast.success("Narrative rewritten successfully");
+    },
+    onError: () => {
+      toast.error("Failed to rewrite narrative");
+    },
+  });
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -133,6 +148,18 @@ export const EnhancedActivityItem = ({
                 }}
               >
                 <HelpCircle className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-muted"
+                disabled={rewriteMutation.isPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  rewriteMutation.mutate(activity.id);
+                }}
+              >
+                <RefreshCw className={`h-4 w-4 text-muted-foreground ${rewriteMutation.isPending ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>

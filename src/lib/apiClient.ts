@@ -42,6 +42,34 @@ export const apiClient = {
     return data.narrative;
   },
 
+  async rewriteEntryNarrative(entryId: string) {
+    const activity = mockActivities.find(a => a.id === entryId);
+    
+    const { data, error } = await supabase.functions.invoke('generate-narrative', {
+      body: {
+        activityName: activity?.appName || 'Unknown',
+        duration: activity?.duration || '0m',
+        timestamp: activity?.timestamp || new Date().toISOString()
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async rewriteDayNarratives(date: string) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const entriesForDay = mockActivities.filter(a => 
+      new Date(a.timestamp).toDateString() === new Date(date).toDateString()
+    );
+    
+    return { 
+      success: true, 
+      count: entriesForDay.length,
+      message: `Rewrote ${entriesForDay.length} entries` 
+    };
+  },
+
   async getSmartSuggestions() {
     const untaggedActivities = mockActivities.filter(a => !a.projectId).slice(0, 5);
     
